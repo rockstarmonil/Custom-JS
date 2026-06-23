@@ -15,8 +15,8 @@
   /* ── CSS ── */
   if (!document.getElementById("mo-css")) {
     var css =
-      /* Page bg */
-      "#login-main-body{background:#eef1f7!important;font-family:'Figtree',sans-serif!important;}" +
+      /* Page bg — keep full viewport height so flex centering works */
+      "#login-main-body{background:#eef1f7!important;font-family:'Figtree',sans-serif!important;min-height:100vh!important;}" +
 
       /* Logo — hidden */
       "#login-header{display:none!important;}" +
@@ -164,6 +164,13 @@
     var goBack = document.getElementById("goBack");
     if (goBack) { goBack.style.setProperty("display", "none", "important"); }
 
+    /* Hide the step-1 email label+input wrapper (Xecurify only hides #userName, not our wrapper) */
+    var emailLbl = document.getElementById("mo-email-lbl");
+    if (emailLbl) {
+      var emailFg = emailLbl.closest(".mo-fg") || emailLbl.parentElement;
+      if (emailFg) emailFg.style.setProperty("display", "none", "important");
+    }
+
     if (document.getElementById("mo-pw-lbl")) return; // already applied
 
     /* Password label above #plaintextPassword */
@@ -284,3 +291,4 @@
   });
 
 }());
+
