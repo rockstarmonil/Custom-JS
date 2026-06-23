@@ -18,8 +18,8 @@
       /* Page bg */
       "#login-main-body{background:#eef1f7!important;font-family:'Figtree',sans-serif!important;}" +
 
-      /* Logo */
-      "#login-header{display:flex!important;justify-content:center!important;margin-bottom:16px!important;}" +
+      /* Logo — hidden */
+      "#login-header{display:none!important;}" +
 
       /* Card */
       "#login-wrapper{" +
@@ -71,8 +71,8 @@
       ".mo-eye:hover{color:#0A55D7;}" +
       ".mo-eye svg{width:18px;height:18px;pointer-events:none;}" +
 
-      /* Remember me row — just forgot link, no remember me checkbox */
-      "#mo-bottom{display:flex;align-items:center;justify-content:flex-start;margin:16px 0 20px;width:100%;}" +
+      /* Forgot link row — right aligned */
+      "#mo-bottom{display:flex;align-items:center;justify-content:flex-end;margin:16px 0 20px;width:100%;}" +
       "#mo-forgot{font-size:13px;font-weight:500;color:#0A55D7;text-decoration:none;font-family:'Figtree',sans-serif;}" +
       "#mo-forgot:hover{text-decoration:underline;}" +
 
