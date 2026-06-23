@@ -1,8 +1,10 @@
 (function () {
   "use strict";
 
-  /* GUARD */
-  if (window.location.pathname.indexOf("/moas/login") === -1) return;
+  /* GUARD — active on login page AND forgot-password page */
+  var isLogin = window.location.pathname.indexOf("/moas/login") !== -1;
+  var isForgot = window.location.pathname.indexOf("/moas/idp/forgotpassword") !== -1;
+  if (!isLogin && !isForgot) return;
 
   /* ── FONT ── */
   if (!document.getElementById("mo-font")) {
@@ -252,36 +254,196 @@
     });
   }
 
-  /* ── MAIN RUN ── */
-  function run() {
-    applyEmailStep();
-    applyPasswordStep();
-    forceHide();
+  /* ─────────────────────────────────────────────────────────────
+   * FORGOT PASSWORD PAGE  (/moas/idp/forgotpassword)
+   * React-rendered — uses timeouts + observer to catch async render
+   * ───────────────────────────────────────────────────────────── */
+  function applyForgotPage() {
+    if (!isForgot) return;
+    if (document.getElementById("mo-forgot-done")) return; // already run
 
-    /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
-    document.querySelectorAll("a[href*='forgotpassword'],a[href*='businessfreetrial']").forEach(function (a) {
-      if (a.id === "mo-forgot") return; // never hide our custom link
-      var c = a.closest(".col-auto");
-      if (c) c.style.setProperty("display", "none", "important");
-      else a.style.setProperty("display", "none", "important");
-    });
+    /* Wait for React to render the form */
+    var emailInput = document.getElementById("emailAddress");
+    if (!emailInput) return; // not ready yet
 
-    var wrapper = document.getElementById("login-wrapper");
-    if (wrapper) wrapper.querySelectorAll("hr,br").forEach(function (el) { el.style.display = "none"; });
+    /* ── Inject forgot-page CSS (once) ── */
+    if (!document.getElementById("mo-fp-css")) {
+      var fpCss =
+        /* Page background */
+        "body,#root{background:#eef1f7!important;}" +
+        /* Force outer React flex container to center content */
+        "#root>div{background:#eef1f7!important;}" +
+        ".d-flex.flex-column.align-items-center{" +
+          "align-items:center!important;" +
+          "justify-content:center!important;" +
+          "min-height:100vh!important;" +
+          "padding:40px 16px!important;" +
+          "box-sizing:border-box!important;" +
+        "}" +
+
+        /* Card — centered via both margin:auto and align-self */
+        ".w-100.border.rounded-4{" +
+        "background:#fff!important;border:1px solid #e0e7ef!important;" +
+        "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
+        "max-width:560px!important;width:100%!important;" +
+        "margin:0 auto!important;align-self:center!important;" +
+        "padding:36px 40px 32px!important;box-sizing:border-box!important;" +
+        "}" +
+
+        /* Hide Xecurify logo row, h4 title, p subtitle */
+        ".w-100.d-flex.justify-content-between.align-items-start.mb-4{display:none!important;}" +
+        "h4.fw-medium.text-dark.mb-1{display:none!important;}" +
+        "p.text-muted.small.mb-4{display:none!important;}" +
+
+        /* Hide card's inner email-icon heading row and description */
+        "#mo-fp-hide-section{display:none!important;}" +
+
+        /* RESET PASSWORD heading */
+        "#mo-fp-title{display:block;font-family:'Figtree',sans-serif;font-size:24px;font-weight:800;" +
+        "color:#0d1b2a;margin-bottom:6px;letter-spacing:-.3px;}" +
+
+        /* Subtitle */
+        "#mo-fp-subtitle{display:block;font-size:14px;color:#6b7a8d;font-family:'Figtree',sans-serif;margin-bottom:20px;}" +
+
+        /* Label */
+        "#mo-fp-lbl{display:block;color:#3c515d;font-size:14px;font-weight:700;padding:0 0 4px;" +
+        "font-family:'Figtree',sans-serif;margin-bottom:0;}" +
+        "#mo-fp-lbl .mo-req{color:#e02020;margin-left:2px;}" +
+
+        /* Email input */
+        "#emailAddress{" +
+        "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
+        "padding:0 12px!important;padding-left:12px!important;font-size:14px!important;" +
+        "font-family:'Figtree',sans-serif!important;color:#000933!important;" +
+        "background:#fff!important;width:100%!important;box-shadow:none!important;" +
+        "outline:none!important;box-sizing:border-box!important;" +
+        "}" +
+        "#emailAddress::placeholder{color:#a0aab6!important;font-size:14px!important;}" +
+        "#emailAddress:focus{border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;}" +
+
+        /* Remove the email icon inside the input wrapper */
+        ".position-relative span.position-absolute{display:none!important;}" +
+
+        /* Helper text */
+        "#mo-fp-helper{font-size:13px;color:#6b7a8d;font-family:'Figtree',sans-serif;" +
+        "margin:10px 0 18px;line-height:1.5;}" +
+        "#mo-fp-helper a{color:#0A55D7;text-decoration:none;font-weight:500;}" +
+        "#mo-fp-helper a:hover{text-decoration:underline;}" +
+
+        /* NEXT button — override d-grid full-width to auto + left-aligned */
+        ".d-grid.mb-3{display:block!important;}" +
+        ".d-grid.mb-3 button[type=submit]{" +
+        "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
+        "gap:8px!important;min-height:40px!important;padding:8px 20px!important;" +
+        "border-radius:0!important;background:#0A55D7!important;background-color:#0A55D7!important;" +
+        "border:none!important;color:#fff!important;font-family:'Figtree',sans-serif!important;" +
+        "font-size:14px!important;font-weight:700!important;letter-spacing:.6px!important;" +
+        "text-transform:uppercase!important;cursor:pointer!important;box-shadow:none!important;" +
+        "width:auto!important;" +
+        "}" +
+        ".d-grid.mb-3 button[type=submit]:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
+
+        /* Hide 'Go back to Login Page' button */
+        ".text-center button.btn-link{display:none!important;}";
+
+      var fpSt = document.createElement("style");
+      fpSt.id = "mo-fp-css"; fpSt.textContent = fpCss;
+      document.head.appendChild(fpSt);
+    }
+
+    /* ── DOM transformations ── */
+
+    /* Hide the card's inner email-icon heading block */
+    var cardHeading = document.querySelector(".d-flex.flex-column.gap-2.mb-2");
+    if (cardHeading) { cardHeading.id = "mo-fp-hide-section"; }
+
+    /* Find the form element */
+    var fpForm = emailInput.closest("form");
+    if (!fpForm) return;
+
+    /* Insert RESET PASSWORD title + subtitle before the form */
+    if (!document.getElementById("mo-fp-title")) {
+      var fpTitle = document.createElement("span");
+      fpTitle.id = "mo-fp-title"; fpTitle.textContent = "RESET PASSWORD";
+      fpForm.parentNode.insertBefore(fpTitle, fpForm);
+
+      var fpSub = document.createElement("span");
+      fpSub.id = "mo-fp-subtitle";
+      fpSub.textContent = "We will send you an email with instructions on how to recover it";
+      fpForm.parentNode.insertBefore(fpSub, fpForm);
+    }
+
+    /* Replace label text */
+    var origLabel = fpForm.querySelector("label[for='emailAddress']");
+    if (origLabel && origLabel.id !== "mo-fp-lbl") {
+      origLabel.id = "mo-fp-lbl"; origLabel.className = "";
+      origLabel.innerHTML = 'Email address <span class="mo-req">*</span>';
+    }
+
+    /* Fix input placeholder */
+    emailInput.setAttribute("placeholder", "email");
+
+    /* Insert helper text after the input wrapper (once) */
+    if (!document.getElementById("mo-fp-helper")) {
+      var inputWrapper = emailInput.closest(".mb-3");
+      if (inputWrapper) {
+        var helper = document.createElement("p");
+        helper.id = "mo-fp-helper";
+        helper.innerHTML =
+          "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Can\u2019t figure it out?<br>" +
+          '<a href="mailto:support@example.com">Contact customer service</a>';
+        inputWrapper.parentNode.insertBefore(helper, inputWrapper.nextSibling);
+      }
+    }
+
+    /* Change button text to NEXT → */
+    var fpBtn = fpForm.querySelector("button[type='submit']");
+    if (fpBtn && fpBtn.textContent.trim() !== "NEXT \u2192") {
+      fpBtn.textContent = "NEXT \u2192";
+    }
+
+    /* Mark as done */
+    var done = document.createElement("span");
+    done.id = "mo-forgot-done"; done.style.display = "none";
+    document.body.appendChild(done);
   }
 
+  /* ── MAIN RUN ── */
+  function run() {
+    if (isLogin) {
+      applyEmailStep();
+      applyPasswordStep();
+      forceHide();
 
-  /* ── TIMING: initial run ── */
+      /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
+      document.querySelectorAll("a[href*='forgotpassword'],a[href*='businessfreetrial']").forEach(function (a) {
+        if (a.id === "mo-forgot") return;
+        var c = a.closest(".col-auto");
+        if (c) c.style.setProperty("display", "none", "important");
+        else a.style.setProperty("display", "none", "important");
+      });
+
+      var wrapper = document.getElementById("login-wrapper");
+      if (wrapper) wrapper.querySelectorAll("hr,br").forEach(function (el) { el.style.display = "none"; });
+    }
+
+    if (isForgot) {
+      applyForgotPage();
+    }
+  }
+
+  /* ── TIMING ── */
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", run);
   } else { run(); }
-  setTimeout(run, 400);
-  setTimeout(run, 1000);
+  setTimeout(run, 300);
+  setTimeout(run, 800);
+  setTimeout(run, 1500); /* extra delay for React pages */
 
-  /* ── OBSERVER: runs on ANY DOM/style change — catches jQuery's .show() ── */
+  /* ── OBSERVER ── */
   var observer = new MutationObserver(function () {
-    forceHide();
-    applyPasswordStep();
+    if (isLogin) { forceHide(); applyPasswordStep(); }
+    if (isForgot) { applyForgotPage(); }
   });
   observer.observe(document.body, {
     childList: true,
@@ -291,4 +453,3 @@
   });
 
 }());
-
