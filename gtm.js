@@ -254,34 +254,29 @@
     });
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   * FORGOT PASSWORD PAGE  (/moas/idp/forgotpassword)
-   * React-rendered — uses timeouts + observer to catch async render
-   * ───────────────────────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────────────────────*/
   function applyForgotPage() {
     if (!isForgot) return;
-    if (document.getElementById("mo-forgot-done")) return; // already run
 
     /* Wait for React to render the form */
     var emailInput = document.getElementById("emailAddress");
     if (!emailInput) return; // not ready yet
 
-    /* ── Inject forgot-page CSS (once) ── */
+    /* ── CSS injection (once) ── */
     if (!document.getElementById("mo-fp-css")) {
       var fpCss =
         /* Page background */
         "body,#root{background:#eef1f7!important;}" +
-        /* Force outer React flex container to center content */
         "#root>div{background:#eef1f7!important;}" +
         ".d-flex.flex-column.align-items-center{" +
-          "align-items:center!important;" +
-          "justify-content:center!important;" +
-          "min-height:100vh!important;" +
-          "padding:40px 16px!important;" +
-          "box-sizing:border-box!important;" +
+        "align-items:center!important;" +
+        "justify-content:center!important;" +
+        "min-height:100vh!important;" +
+        "padding:40px 16px!important;" +
+        "box-sizing:border-box!important;" +
         "}" +
 
-        /* Card — centered via both margin:auto and align-self */
+        /* Card */
         ".w-100.border.rounded-4{" +
         "background:#fff!important;border:1px solid #e0e7ef!important;" +
         "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
@@ -290,12 +285,12 @@
         "padding:36px 40px 32px!important;box-sizing:border-box!important;" +
         "}" +
 
-        /* Hide Xecurify logo row, h4 title, p subtitle */
+        /* Hide logo row, h4, p */
         ".w-100.d-flex.justify-content-between.align-items-start.mb-4{display:none!important;}" +
-        "h4.fw-medium.text-dark.mb-1{display:none!important;}" +
-        "p.text-muted.small.mb-4{display:none!important;}" +
+        "h4.fw-medium.text-dark.mb-1,h4.fw-medium{display:none!important;}" +
+        "p.text-muted.small{display:none!important;}" +
 
-        /* Hide card's inner email-icon heading row and description */
+        /* Hide card's inner heading */
         "#mo-fp-hide-section{display:none!important;}" +
 
         /* RESET PASSWORD heading */
@@ -321,7 +316,7 @@
         "#emailAddress::placeholder{color:#a0aab6!important;font-size:14px!important;}" +
         "#emailAddress:focus{border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;}" +
 
-        /* Remove the email icon inside the input wrapper */
+        /* Remove input icon */
         ".position-relative span.position-absolute{display:none!important;}" +
 
         /* Helper text */
@@ -330,7 +325,7 @@
         "#mo-fp-helper a{color:#0A55D7;text-decoration:none;font-weight:500;}" +
         "#mo-fp-helper a:hover{text-decoration:underline;}" +
 
-        /* NEXT button — override d-grid full-width to auto + left-aligned */
+        /* NEXT button */
         ".d-grid.mb-3{display:block!important;}" +
         ".d-grid.mb-3 button[type=submit]{" +
         "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
@@ -343,7 +338,7 @@
         "}" +
         ".d-grid.mb-3 button[type=submit]:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
 
-        /* Hide 'Go back to Login Page' button */
+        /* Hide Go back button */
         ".text-center button.btn-link{display:none!important;}";
 
       var fpSt = document.createElement("style");
@@ -351,15 +346,32 @@
       document.head.appendChild(fpSt);
     }
 
-    /* ── DOM transformations ── */
-
-    /* Hide the card's inner email-icon heading block */
+    /* ── JS force-hide (runs every call — beats React re-renders & inline styles) ── */
+    /* Logo row */
+    document.querySelectorAll("div.w-100.d-flex").forEach(function (el) {
+      if (el.classList.contains("justify-content-between") && el.classList.contains("align-items-start")) {
+        el.style.setProperty("display", "none", "important");
+      }
+    });
+    /* h4 heading */
+    document.querySelectorAll("h4").forEach(function (el) {
+      el.style.setProperty("display", "none", "important");
+    });
+    /* Subtitle paragraph */
+    document.querySelectorAll("p.text-muted").forEach(function (el) {
+      el.style.setProperty("display", "none", "important");
+    });
+    /* Card heading block */
     var cardHeading = document.querySelector(".d-flex.flex-column.gap-2.mb-2");
-    if (cardHeading) { cardHeading.id = "mo-fp-hide-section"; }
+    if (cardHeading) { cardHeading.style.setProperty("display", "none", "important"); }
+
+    /* ── DOM injection — only once ── */
+    if (document.getElementById("mo-forgot-done")) return;
 
     /* Find the form element */
     var fpForm = emailInput.closest("form");
     if (!fpForm) return;
+
 
     /* Insert RESET PASSWORD title + subtitle before the form */
     if (!document.getElementById("mo-fp-title")) {
