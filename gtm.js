@@ -1,10 +1,11 @@
 (function () {
   "use strict";
 
-  /* GUARD — active on login page AND forgot-password page */
+  /* GUARD — active on login page, forgot-password page, and OTP verification page */
   var isLogin = window.location.pathname.indexOf("/moas/login") !== -1;
   var isForgot = window.location.pathname.indexOf("/moas/idp/forgotpassword") !== -1;
-  if (!isLogin && !isForgot) return;
+  var isOtp = window.location.pathname.indexOf("/moas/idp/validatenextfactor") !== -1;
+  if (!isLogin && !isForgot && !isOtp) return;
 
   /* ── FONT ── */
   if (!document.getElementById("mo-font")) {
@@ -254,7 +255,7 @@
     });
   }
 
-  /* ─────────────────────────────────────────────────────────────*/
+  /* ── FORGOT PASSWORD PAGE (/moas/idp/forgotpassword) ── */
   function applyForgotPage() {
     if (!isForgot) return;
 
@@ -372,7 +373,6 @@
     var fpForm = emailInput.closest("form");
     if (!fpForm) return;
 
-
     /* Insert RESET PASSWORD title + subtitle before the form */
     if (!document.getElementById("mo-fp-title")) {
       var fpTitle = document.createElement("span");
@@ -420,6 +420,116 @@
     document.body.appendChild(done);
   }
 
+  /* ── OTP VERIFY PAGE (/moas/idp/validatenextfactor) ── */
+  function applyOtpPage() {
+    if (!isOtp) return;
+
+    /* CSS — inject once */
+    if (!document.getElementById("mo-otp-css")) {
+      var otpCss =
+        /* Page: remove grey overlay, set brand bg */
+        "body{background:#eef1f7!important;overflow:auto!important;" +
+        "padding-right:0!important;font-family:'Figtree',sans-serif!important;}" +
+        ".modal-backdrop{display:none!important;}" +
+        ".modal.show{position:static!important;display:flex!important;" +
+        "align-items:center!important;justify-content:center!important;" +
+        "min-height:100vh!important;background:#eef1f7!important;" +
+        "padding:40px 16px!important;box-sizing:border-box!important;}" +
+        ".modal-dialog{margin:0!important;max-width:640px!important;width:100%!important;}" +
+        ".modal-content{border:1px solid #e0e7ef!important;border-radius:4px!important;" +
+        "box-shadow:0 2px 12px rgba(0,0,0,.08)!important;}" +
+        "#modal-header-main{border-bottom:none!important;padding:32px 36px 12px!important;}" +
+        ".modal-title{font-size:0!important;color:transparent!important;}" +
+        "#mo-otp-title{display:block;font-family:'Figtree',sans-serif;font-size:24px;" +
+        "font-weight:800;color:#0d1b2a;text-transform:uppercase;letter-spacing:-.3px;margin:0;}" +
+        "#modal-body{padding:4px 36px 4px!important;}" +
+        "#success-alert-message{background:#e8f5e9!important;border:none!important;" +
+        "border-left:4px solid #2e7d32!important;border-radius:4px!important;" +
+        "color:#1b5e20!important;padding:12px 16px!important;display:flex!important;" +
+        "align-items:flex-start!important;gap:10px!important;margin-bottom:20px!important;}" +
+        "#success-alert-message .fa-check-circle{color:#2e7d32!important;" +
+        "font-size:18px!important;flex-shrink:0;margin-top:2px!important;}" +
+        "#success-alert-message .btn-close{display:none!important;}" +
+        "#success-alert-message .actionMessage{list-style:none!important;" +
+        "padding:0!important;margin:0!important;}" +
+        "#success-alert-message .actionMessage li span{font-family:'Figtree',sans-serif;" +
+        "font-size:14px;line-height:1.5;}" +
+        "#mo-otp-lbl{display:block;font-family:'Figtree',sans-serif;font-size:14px;" +
+        "font-weight:700;color:#3c515d;margin-bottom:6px;}" +
+        "#mo-otp-lbl .mo-req{color:#e02020;margin-left:2px;}" +
+        "#otpToken{height:40px!important;border:1px solid #C1CFD7!important;" +
+        "border-radius:4px!important;padding:0 12px!important;font-size:14px!important;" +
+        "font-family:'Figtree',sans-serif!important;color:#000933!important;" +
+        "background:#fff!important;box-shadow:none!important;" +
+        "width:100%!important;box-sizing:border-box!important;}" +
+        "#otpToken::placeholder{color:#a0aab6!important;font-size:14px!important;}" +
+        "#otpToken:focus{border-color:#0A55D7!important;" +
+        "box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;outline:none!important;}" +
+        "#resendIdpOtpLink{color:#0A55D7!important;font-family:'Figtree',sans-serif!important;" +
+        "font-size:14px!important;text-decoration:none!important;font-weight:500!important;" +
+        "display:inline-block!important;margin-top:12px!important;}" +
+        "#resendIdpOtpLink:hover{text-decoration:underline!important;}" +
+        "#modal-footer{border-top:none!important;padding:20px 36px 32px!important;" +
+        "justify-content:flex-start!important;gap:12px!important;}" +
+        "#validate{background:#0A55D7!important;background-color:#0A55D7!important;" +
+        "border:none!important;border-radius:0!important;color:#fff!important;" +
+        "font-family:'Figtree',sans-serif!important;font-size:14px!important;" +
+        "font-weight:700!important;text-transform:uppercase!important;" +
+        "letter-spacing:.6px!important;padding:8px 24px!important;" +
+        "cursor:pointer!important;min-height:40px!important;}" +
+        "#validate:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
+        ".btn-cancel{background:#e9ecef!important;border:none!important;" +
+        "border-radius:0!important;color:#3c515d!important;" +
+        "font-family:'Figtree',sans-serif!important;font-size:14px!important;" +
+        "font-weight:700!important;text-transform:uppercase!important;" +
+        "letter-spacing:.6px!important;padding:8px 24px!important;min-height:40px!important;}" +
+        ".btn-cancel:hover{background:#dee2e6!important;}";
+
+      var otpSt = document.createElement("style");
+      otpSt.id = "mo-otp-css"; otpSt.textContent = otpCss;
+      document.head.appendChild(otpSt);
+    }
+
+    /* DOM changes — only once */
+    if (document.getElementById("mo-otp-done")) return;
+    var otpInput = document.getElementById("otpToken");
+    if (!otpInput) return;
+
+    /* VERIFY YOUR IDENTITY title */
+    var modalHeader = document.getElementById("modal-header-main");
+    if (modalHeader && !document.getElementById("mo-otp-title")) {
+      var otpTitle = document.createElement("span");
+      otpTitle.id = "mo-otp-title";
+      otpTitle.textContent = "VERIFY YOUR IDENTITY";
+      modalHeader.insertBefore(otpTitle, modalHeader.firstChild);
+    }
+
+    /* Label above OTP input */
+    if (!document.getElementById("mo-otp-lbl")) {
+      var otpLbl = document.createElement("label");
+      otpLbl.id = "mo-otp-lbl";
+      otpLbl.setAttribute("for", "otpToken");
+      otpLbl.innerHTML = 'Enter OTP here <span class="mo-req">*</span>';
+      otpInput.parentNode.insertBefore(otpLbl, otpInput);
+    }
+
+    /* Placeholder */
+    otpInput.setAttribute("placeholder", "OTP number");
+
+    /* Verify button */
+    var verifyBtn = document.getElementById("validate");
+    if (verifyBtn) verifyBtn.value = "VERIFY \u2192";
+
+    /* Cancel button */
+    var cancelBtn = document.querySelector(".btn-cancel");
+    if (cancelBtn) cancelBtn.textContent = "CANCEL";
+
+    /* Mark done */
+    var otpDone = document.createElement("span");
+    otpDone.id = "mo-otp-done"; otpDone.style.display = "none";
+    document.body.appendChild(otpDone);
+  }
+
   /* ── MAIN RUN ── */
   function run() {
     if (isLogin) {
@@ -439,9 +549,8 @@
       if (wrapper) wrapper.querySelectorAll("hr,br").forEach(function (el) { el.style.display = "none"; });
     }
 
-    if (isForgot) {
-      applyForgotPage();
-    }
+    if (isForgot) { applyForgotPage(); }
+    if (isOtp)    { applyOtpPage(); }
   }
 
   /* ── TIMING ── */
@@ -450,12 +559,13 @@
   } else { run(); }
   setTimeout(run, 300);
   setTimeout(run, 800);
-  setTimeout(run, 1500); /* extra delay for React pages */
+  setTimeout(run, 1500);
 
   /* ── OBSERVER ── */
   var observer = new MutationObserver(function () {
     if (isLogin) { forceHide(); applyPasswordStep(); }
     if (isForgot) { applyForgotPage(); }
+    if (isOtp)    { applyOtpPage(); }
   });
   observer.observe(document.body, {
     childList: true,
