@@ -1,14 +1,50 @@
 (function () {
   "use strict";
 
-  /* GUARD — active on login page, forgot-password page, OTP verification page, and change password page */
-  var path = window.location.pathname.toLowerCase();
-  var isLogin = path.indexOf("/moas/login") !== -1 ||
-                path.indexOf("/moas/idp/userlogin") !== -1;
-  var isForgot = path.indexOf("/moas/idp/forgotpassword") !== -1;
-  var isOtp = path.indexOf("/moas/idp/validatenextfactor") !== -1;
-  var isChangePass = path.indexOf("/moas/idp/changepassword") !== -1;
-  if (!isLogin && !isForgot && !isOtp && !isChangePass) return;
+  /* ── PAGE DETECTION HELPERS ── */
+  function checkIsLogin() {
+    var path = window.location.pathname.toLowerCase();
+    if (path.indexOf("/moas/login") !== -1 || path.indexOf("/moas/idp/userlogin") !== -1) {
+      return true;
+    }
+    return !!document.getElementById("enduserloginform") || !!document.getElementById("idploginform");
+  }
+
+  function checkIsForgot() {
+    var path = window.location.pathname.toLowerCase();
+    if (path.indexOf("/moas/idp/forgotpassword") !== -1) {
+      return true;
+    }
+    return !!document.getElementById("emailAddress") && (function () {
+      var h4 = document.querySelector("h4");
+      return h4 && h4.textContent.toLowerCase().indexOf("forgot") !== -1;
+    })();
+  }
+
+  function checkIsOtp() {
+    var path = window.location.pathname.toLowerCase();
+    if (path.indexOf("/moas/idp/validatenextfactor") !== -1) {
+      return true;
+    }
+    return !!document.getElementById("otpToken");
+  }
+
+  function checkIsChangePass() {
+    var path = window.location.pathname.toLowerCase();
+    if (path.indexOf("/moas/idp/changepassword") !== -1) {
+      return true;
+    }
+    if (document.getElementById("passwordform")) {
+      return true;
+    }
+    var lh = document.querySelector(".login-header");
+    if (lh && lh.textContent.toLowerCase().indexOf("change") !== -1) {
+      return true;
+    }
+    return false;
+  }
+
+  if (!checkIsLogin() && !checkIsForgot() && !checkIsOtp() && !checkIsChangePass()) return;
 
   /* ── FONT ── */
   if (!document.getElementById("mo-font")) {
@@ -285,7 +321,7 @@
 
   /* ── FORGOT PASSWORD PAGE (/moas/idp/forgotpassword) ── */
   function applyForgotPage() {
-    if (!isForgot) return;
+    if (!checkIsForgot()) return;
 
     /* Wait for React to render the form */
     var emailInput = document.getElementById("emailAddress");
@@ -450,7 +486,7 @@
 
   /* ── OTP VERIFY PAGE (/moas/idp/validatenextfactor) ── */
   function applyOtpPage() {
-    if (!isOtp) return;
+    if (!checkIsOtp()) return;
 
     /* CSS — inject once */
     if (!document.getElementById("mo-otp-css")) {
@@ -560,7 +596,7 @@
 
   /* ── CHANGE PASSWORD PAGE (/moas/idp/changepassword) ── */
   function applyChangePasswordPage() {
-    if (!isChangePass) return;
+    if (!checkIsChangePass()) return;
 
     /* CSS — inject once */
     if (!document.getElementById("mo-cp-css")) {
@@ -840,6 +876,13 @@
 
   /* ── MAIN RUN ── */
   function run() {
+    var isLogin = checkIsLogin();
+    var isForgot = checkIsForgot();
+    var isOtp = checkIsOtp();
+    var isChangePass = checkIsChangePass();
+
+    if (!isLogin && !isForgot && !isOtp && !isChangePass) return;
+
     if (isLogin) {
       applyEmailStep();
       applyPasswordStep();
@@ -872,6 +915,11 @@
 
   /* ── OBSERVER ── */
   var observer = new MutationObserver(function () {
+    var isLogin = checkIsLogin();
+    var isForgot = checkIsForgot();
+    var isOtp = checkIsOtp();
+    var isChangePass = checkIsChangePass();
+
     if (isLogin) { forceHide(); applyPasswordStep(); }
     if (isForgot) { applyForgotPage(); }
     if (isOtp)    { applyOtpPage(); }
