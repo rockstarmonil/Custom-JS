@@ -2,11 +2,12 @@
   "use strict";
 
   /* GUARD — active on login page, forgot-password page, OTP verification page, and change password page */
-  var isLogin = window.location.pathname.indexOf("/moas/login") !== -1 ||
-                window.location.pathname.indexOf("/moas/idp/userlogin") !== -1;
-  var isForgot = window.location.pathname.indexOf("/moas/idp/forgotpassword") !== -1;
-  var isOtp = window.location.pathname.indexOf("/moas/idp/validatenextfactor") !== -1;
-  var isChangePass = window.location.pathname.indexOf("/moas/idp/changepassword") !== -1;
+  var path = window.location.pathname.toLowerCase();
+  var isLogin = path.indexOf("/moas/login") !== -1 ||
+                path.indexOf("/moas/idp/userlogin") !== -1;
+  var isForgot = path.indexOf("/moas/idp/forgotpassword") !== -1;
+  var isOtp = path.indexOf("/moas/idp/validatenextfactor") !== -1;
+  var isChangePass = path.indexOf("/moas/idp/changepassword") !== -1;
   if (!isLogin && !isForgot && !isOtp && !isChangePass) return;
 
   /* ── FONT ── */
@@ -745,7 +746,7 @@
 
       var listItems = document.querySelectorAll("#listcontent li");
       var score = 0;
-      var totalRules = listItems.length;
+      var totalRules = listItems.length || 1;
 
       listItems.forEach(function (li) {
         var txt = li.textContent.trim().toLowerCase();
