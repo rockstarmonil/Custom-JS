@@ -12,13 +12,19 @@
 
   function checkIsForgot() {
     var path = window.location.pathname.toLowerCase();
-    if (path.indexOf("/moas/idp/forgotpassword") !== -1) {
+    if (path.indexOf("moas/idp/forgotpassword") !== -1 || 
+        path.indexOf("moas/idp/resetpassword") !== -1 || 
+        path.indexOf("moas/idp/resetuserpassword") !== -1) {
       return true;
     }
-    return !!document.getElementById("emailAddress") && (function () {
-      var h4 = document.querySelector("h4");
-      return h4 && h4.textContent.toLowerCase().indexOf("forgot") !== -1;
-    })();
+    var userform = document.getElementById("userform");
+    if (userform) {
+      var act = (userform.getAttribute("action") || "").toLowerCase();
+      if (act.indexOf("resetuserpassword") !== -1 || act.indexOf("resetpassword") !== -1 || act.indexOf("forgotpassword") !== -1) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function checkIsOtp() {
@@ -31,7 +37,8 @@
 
   function checkIsChangePass() {
     var path = window.location.pathname.toLowerCase();
-    if (path.indexOf("/moas/idp/changepassword") !== -1) {
+    if (path.indexOf("moas/idp/changepassword") !== -1 || 
+        path.indexOf("moas/idp/changeuserpassword") !== -1) {
       return true;
     }
     if (document.getElementById("passwordform")) {
@@ -44,7 +51,8 @@
     return false;
   }
 
-  if (!checkIsLogin() && !checkIsForgot() && !checkIsOtp() && !checkIsChangePass()) return;
+  /* ── INJECT FONT AND CSS ── */
+  function injectFontAndCss() {
 
   /* ── FONT ── */
   if (!document.getElementById("mo-font")) {
@@ -91,7 +99,7 @@
       /* Hide original page elements */
       ".login-header.custom-title,hr,#dynamicUserName,#feedback-msg,#username-error,br.my-2," +
       "#goBack," +
-      "a[href*='businessfreetrial'],a[href*='forgotpassword']:not(#mo-forgot),.col-auto.form-group{display:none!important;}" +
+      "a[href*='businessfreetrial'],a[href*='forgotpassword']:not(#mo-forgot),a[href*='resetpassword']:not(#mo-forgot),.col-auto.form-group{display:none!important;}" +
 
       /* LOG IN heading — top LEFT */
       "#mo-title{display:block;font-family:'Figtree',sans-serif;font-size:26px;font-weight:800;" +
@@ -158,10 +166,11 @@
     st.id = "mo-css"; st.textContent = css;
     document.head.appendChild(st);
   }
+}
 
   /* ── HELPERS ── */
   function getForgotHref() {
-    var a = document.querySelector("a[href*='forgotpassword']");
+    var a = document.querySelector("a[href*='forgotpassword'], a[href*='resetpassword']");
     return a ? a.href : "#";
   }
 
@@ -323,88 +332,118 @@
   function applyForgotPage() {
     if (!checkIsForgot()) return;
 
-    /* Wait for React to render the form */
-    var emailInput = document.getElementById("emailAddress");
+    /* Wait for form to load */
+    var emailInput = document.getElementById("emailAddress") || document.getElementById("username");
     if (!emailInput) return; // not ready yet
 
     /* ── CSS injection (once) ── */
     if (!document.getElementById("mo-fp-css")) {
       var fpCss =
         /* Page background */
-        "body,#root{background:#eef1f7!important;}" +
+        "body,#root,#login-body{background:#eef1f7!important;}" +
         "#root>div{background:#eef1f7!important;}" +
-        ".d-flex.flex-column.align-items-center{" +
+        "#login-header{display:none!important;}" +
+        "#login-body,.container-fluid{" +
+        "height:auto!important;min-height:unset!important;" +
+        "width:100%!important;max-width:100%!important;margin:0 auto!important;padding:0!important;" +
+        "display:block!important;float:none!important;position:relative!important;" +
+        "}" +
+        "#root .d-flex.flex-column.align-items-center{" +
         "align-items:center!important;" +
         "justify-content:center!important;" +
         "min-height:100vh!important;" +
         "padding:40px 16px!important;" +
         "box-sizing:border-box!important;" +
+        "background:#eef1f7!important;" +
         "}" +
 
         /* Card */
-        ".w-100.border.rounded-4{" +
+        ".w-100.border.rounded-4,#login-wrapper{" +
         "background:#fff!important;border:1px solid #e0e7ef!important;" +
         "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
         "max-width:560px!important;width:100%!important;" +
-        "margin:0 auto!important;align-self:center!important;" +
+        "margin:40px auto!important;display:block!important;float:none!important;" +
+        "position:relative!important;left:auto!important;right:auto!important;" +
         "padding:36px 40px 32px!important;box-sizing:border-box!important;" +
+        "height:auto!important;min-height:unset!important;" +
         "}" +
 
-        /* Hide logo row, h4, p */
+        /* Form override (remove grey background) */
+        "#userform,.login-form{" +
+        "background:transparent!important;border:none!important;box-shadow:none!important;" +
+        "padding:0!important;margin:0!important;width:100%!important;max-width:100%!important;" +
+        "display:flex!important;flex-direction:column!important;align-items:stretch!important;" +
+        "}" +
+
+        /* Hide logo row, h4, p, separators */
         ".w-100.d-flex.justify-content-between.align-items-start.mb-4{display:none!important;}" +
-        "h4.fw-medium.text-dark.mb-1,h4.fw-medium{display:none!important;}" +
+        "h4.fw-medium.text-dark.mb-1,h4.fw-medium,h4.my-4{display:none!important;}" +
         "p.text-muted.small{display:none!important;}" +
+        "#login-wrapper hr,#userform hr{display:none!important;}" +
 
         /* Hide card's inner heading */
         "#mo-fp-hide-section{display:none!important;}" +
 
         /* RESET PASSWORD heading */
         "#mo-fp-title{display:block;font-family:'Figtree',sans-serif;font-size:24px;font-weight:800;" +
-        "color:#0d1b2a;margin-bottom:6px;letter-spacing:-.3px;}" +
+        "color:#0d1b2a;margin-bottom:6px;letter-spacing:-.3px;text-align:left!important;}" +
 
         /* Subtitle */
-        "#mo-fp-subtitle{display:block;font-size:14px;color:#6b7a8d;font-family:'Figtree',sans-serif;margin-bottom:20px;}" +
+        "#mo-fp-subtitle{display:block;font-size:14px;color:#6b7a8d;font-family:'Figtree',sans-serif;margin-bottom:20px;text-align:left!important;}" +
 
         /* Label */
-        "#mo-fp-lbl{display:block;color:#3c515d;font-size:14px;font-weight:700;padding:0 0 4px;" +
-        "font-family:'Figtree',sans-serif;margin-bottom:0;}" +
-        "#mo-fp-lbl .mo-req{color:#e02020;margin-left:2px;}" +
+        "#mo-fp-lbl{" +
+        "display:block!important;color:#3c515d!important;font-size:14px!important;font-weight:700!important;" +
+        "padding:0 0 6px!important;font-family:'Figtree',sans-serif!important;margin-bottom:0!important;" +
+        "text-align:left!important;width:100%!important;" +
+        "}" +
+        "#mo-fp-lbl .mo-req{color:#e02020!important;margin-left:2px!important;}" +
 
         /* Email input */
-        "#emailAddress{" +
+        "#emailAddress,#username{" +
         "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
         "padding:0 12px!important;padding-left:12px!important;font-size:14px!important;" +
         "font-family:'Figtree',sans-serif!important;color:#000933!important;" +
         "background:#fff!important;width:100%!important;box-shadow:none!important;" +
         "outline:none!important;box-sizing:border-box!important;" +
+        "margin-bottom:0!important;display:block!important;" +
         "}" +
-        "#emailAddress::placeholder{color:#a0aab6!important;font-size:14px!important;}" +
-        "#emailAddress:focus{border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;}" +
+        "#emailAddress::placeholder,#username::placeholder{color:#a0aab6!important;font-size:14px!important;}" +
+        "#emailAddress:focus,#username:focus{border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;}" +
 
         /* Remove input icon */
         ".position-relative span.position-absolute{display:none!important;}" +
 
+        /* Form / row scaling for legacy */
+        "#userform .w-75,#userform .row,#userform .username-custom{" +
+        "width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;" +
+        "display:block!important;" +
+        "}" +
+
         /* Helper text */
         "#mo-fp-helper{font-size:13px;color:#6b7a8d;font-family:'Figtree',sans-serif;" +
-        "margin:10px 0 18px;line-height:1.5;}" +
+        "margin:14px 0 18px;line-height:1.5;text-align:left!important;width:100%!important;}" +
         "#mo-fp-helper a{color:#0A55D7;text-decoration:none;font-weight:500;}" +
         "#mo-fp-helper a:hover{text-decoration:underline;}" +
 
         /* NEXT button */
         ".d-grid.mb-3{display:block!important;}" +
-        ".d-grid.mb-3 button[type=submit]{" +
+        ".d-grid.mb-3 button[type=submit],#userform button[type=submit],#userform button.custom-button{" +
         "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
-        "gap:8px!important;min-height:40px!important;padding:8px 20px!important;" +
+        "gap:8px!important;min-height:40px!important;padding:8px 24px!important;" +
         "border-radius:0!important;background:#0A55D7!important;background-color:#0A55D7!important;" +
         "border:none!important;color:#fff!important;font-family:'Figtree',sans-serif!important;" +
         "font-size:14px!important;font-weight:700!important;letter-spacing:.6px!important;" +
         "text-transform:uppercase!important;cursor:pointer!important;box-shadow:none!important;" +
-        "width:auto!important;" +
+        "width:auto!important;margin:10px auto 10px 0!important;align-self:flex-start!important;" +
         "}" +
-        ".d-grid.mb-3 button[type=submit]:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
+        ".d-grid.mb-3 button[type=submit]:hover,#userform button[type=submit]:hover,#userform button.custom-button:hover{" +
+        "background:#0844b0!important;background-color:#0844b0!important;" +
+        "}" +
+        "#userform .row div:has(.custom-button){text-align:left!important;width:100%!important;}" +
 
         /* Hide Go back button */
-        ".text-center button.btn-link{display:none!important;}";
+        ".text-center button.btn-link,#go-back-link,#userform p:has(#go-back-link){display:none!important;}";
 
       var fpSt = document.createElement("style");
       fpSt.id = "mo-fp-css"; fpSt.textContent = fpCss;
@@ -430,6 +469,11 @@
     var cardHeading = document.querySelector(".d-flex.flex-column.gap-2.mb-2");
     if (cardHeading) { cardHeading.style.setProperty("display", "none", "important"); }
 
+    /* separators and headers */
+    document.querySelectorAll("#login-wrapper hr,#userform hr").forEach(function (el) {
+      el.style.setProperty("display", "none", "important");
+    });
+
     /* ── DOM injection — only once ── */
     if (document.getElementById("mo-forgot-done")) return;
 
@@ -449,9 +493,15 @@
       fpForm.parentNode.insertBefore(fpSub, fpForm);
     }
 
-    /* Replace label text */
-    var origLabel = fpForm.querySelector("label[for='emailAddress']");
-    if (origLabel && origLabel.id !== "mo-fp-lbl") {
+    /* Replace/create label text */
+    var origLabel = fpForm.querySelector("label[for='emailAddress']") || fpForm.querySelector("label[for='username']") || document.getElementById("mo-fp-lbl");
+    if (!origLabel) {
+      origLabel = document.createElement("label");
+      origLabel.setAttribute("for", emailInput.id);
+      origLabel.id = "mo-fp-lbl";
+      origLabel.innerHTML = 'Email address <span class="mo-req">*</span>';
+      emailInput.parentNode.insertBefore(origLabel, emailInput);
+    } else if (origLabel.id !== "mo-fp-lbl") {
       origLabel.id = "mo-fp-lbl"; origLabel.className = "";
       origLabel.innerHTML = 'Email address <span class="mo-req">*</span>';
     }
@@ -461,7 +511,7 @@
 
     /* Insert helper text after the input wrapper (once) */
     if (!document.getElementById("mo-fp-helper")) {
-      var inputWrapper = emailInput.closest(".mb-3");
+      var inputWrapper = emailInput.closest(".mb-3") || emailInput.closest(".username-custom") || emailInput.closest(".row");
       if (inputWrapper) {
         var helper = document.createElement("p");
         helper.id = "mo-fp-helper";
@@ -473,9 +523,9 @@
     }
 
     /* Change button text to NEXT → */
-    var fpBtn = fpForm.querySelector("button[type='submit']");
-    if (fpBtn && fpBtn.textContent.trim() !== "NEXT \u2192") {
-      fpBtn.textContent = "NEXT \u2192";
+    var fpBtn = fpForm.querySelector("button") || fpForm.querySelector("input[type='submit']");
+    if (fpBtn && fpBtn.textContent.trim().indexOf("NEXT") === -1) {
+      fpBtn.innerHTML = 'NEXT <span style="margin-left: 6px;">&rarr;</span>';
     }
 
     /* Mark as done */
@@ -626,8 +676,9 @@
         "#login-wrapper hr{display:none!important;}" +
 
         /* Form stack */
-        "#passwordform .row{margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;}" +
-        "#passwordform .col-md-5,#passwordform .col-md-8,#passwordform .offset-md-1,#passwordform .offset-md-2{" +
+        "#passwordform .row,#userform .row{margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;}" +
+        "#passwordform .col-md-5,#passwordform .col-md-8,#passwordform .offset-md-1,#passwordform .offset-md-2," +
+        "#userform .col-xs-5,#userform .col-xs-offset-1,#userform .col-xs-10,#userform .col-xs-offset-2{" +
         "width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;text-align:left!important;" +
         "}" +
 
@@ -666,26 +717,26 @@
         "}" +
 
         /* Style label/text above inputs */
-        "#passwordform p.text-left{" +
+        "#passwordform p.text-left,#userform span.align-items-left,#userform span.d-flex{" +
         "display:block!important;color:#3c515d!important;font-size:14px!important;" +
         "font-weight:700!important;font-family:'Figtree',sans-serif!important;" +
         "text-align:left!important;margin:0 0 6px 0!important;" +
         "}" +
 
         /* Style inputs */
-        "#newPassword,#confirmPassword{" +
+        "#newPassword,#confirmPassword,#password,#userform input[type='password']{" +
         "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
         "padding:0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
         "color:#000933!important;background:#fff!important;width:100%!important;" +
         "box-shadow:none!important;outline:none!important;box-sizing:border-box!important;" +
         "margin-bottom:16px!important;display:block!important;" +
         "}" +
-        "#newPassword:focus,#confirmPassword:focus{" +
+        "#newPassword:focus,#confirmPassword:focus,#password:focus,#userform input[type='password']:focus{" +
         "border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;" +
         "}" +
 
         /* Submit button styling */
-        "#validate{" +
+        "#validate,#submit{" +
         "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
         "gap:8px!important;min-height:40px!important;padding:8px 24px!important;" +
         "border-radius:0!important;background:#0A55D7!important;background-color:#0A55D7!important;" +
@@ -694,18 +745,21 @@
         "text-transform:uppercase!important;cursor:pointer!important;box-shadow:none!important;" +
         "width:auto!important;margin:10px auto 10px 0!important;align-self:flex-start!important;" +
         "}" +
-        "#validate:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
+        "#validate:hover,#submit:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
 
         /* Hide Go Back to Login link */
-        "#passwordform a.btn-link{display:none!important;}";
+        "#passwordform a.btn-link,#back-link{display:none!important;}";
 
       var cpSt = document.createElement("style");
       cpSt.id = "mo-cp-css"; cpSt.textContent = cpCss;
       document.head.appendChild(cpSt);
     }
 
-    var fpForm = document.getElementById("passwordform");
+    var fpForm = document.getElementById("passwordform") || document.getElementById("userform");
     if (!fpForm) return;
+
+    var newPasswordInput = document.getElementById("newPassword") || fpForm.querySelector("input[name='password']");
+    var confirmPasswordInput = document.getElementById("confirmPassword") || fpForm.querySelector("input[name='confirmPassword']");
 
     /* Update title to LOGIN DETAILS with close x button */
     var h3 = document.querySelector(".login-header");
@@ -726,11 +780,12 @@
     }
 
     /* Add * to labels */
-    document.querySelectorAll("#passwordform p.text-left").forEach(function (p) {
+    var labelSelector = "#passwordform p.text-left, #userform span.align-items-left, #userform span.d-flex";
+    document.querySelectorAll(labelSelector).forEach(function (p) {
       var t = p.textContent.trim();
-      if (t.indexOf("New Password") !== -1 && !p.querySelector(".mo-req")) {
+      if (t.toLowerCase().indexOf("new password") !== -1 && !p.querySelector(".mo-req")) {
         p.innerHTML = 'New password <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
-      } else if (t.indexOf("Confirm Password") !== -1 && !p.querySelector(".mo-req")) {
+      } else if (t.toLowerCase().indexOf("confirm password") !== -1 && !p.querySelector(".mo-req")) {
         p.innerHTML = 'Confirm password <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
       }
     });
@@ -751,7 +806,7 @@
     }
 
     /* Move requirements block below new password input (above confirm password input) */
-    var newPasswordCol = document.getElementById("newPassword") ? document.getElementById("newPassword").closest("div") : null;
+    var newPasswordCol = newPasswordInput ? newPasswordInput.closest("div") : null;
     var requirementsBlock = document.querySelector(".password-padding");
     if (newPasswordCol && requirementsBlock && requirementsBlock.previousSibling !== newPasswordCol) {
       newPasswordCol.parentNode.insertBefore(requirementsBlock, newPasswordCol.nextSibling);
@@ -776,7 +831,6 @@
 
     /* Dynamic Validation Function */
     function updatePasswordRequirementsAndStrength() {
-      var newPasswordInput = document.getElementById("newPassword");
       if (!newPasswordInput) return;
       var val = newPasswordInput.value || "";
 
@@ -860,7 +914,6 @@
     }
 
     /* Bind events for dynamic updates */
-    var newPasswordInput = document.getElementById("newPassword");
     if (newPasswordInput && !newPasswordInput.dataset.moListener) {
       newPasswordInput.dataset.moListener = "true";
       newPasswordInput.addEventListener("input", updatePasswordRequirementsAndStrength);
@@ -868,17 +921,16 @@
     }
 
     /* Update button text to SAVE */
-    var saveBtn = document.getElementById("validate");
+    var saveBtn = document.getElementById("validate") || document.getElementById("submit");
     if (saveBtn) {
       saveBtn.value = "SAVE";
     }
 
     /* Disable native HTML5 validation bubbles/hovers */
-    var form = document.getElementById("passwordform");
+    var form = document.getElementById("passwordform") || document.getElementById("userform");
     if (form) {
       form.setAttribute("novalidate", "true");
     }
-    var confirmPasswordInput = document.getElementById("confirmPassword");
     if (newPasswordInput) {
       newPasswordInput.removeAttribute("title");
     }
@@ -951,13 +1003,15 @@
 
     if (!isLogin && !isForgot && !isOtp && !isChangePass) return;
 
+    injectFontAndCss();
+
     if (isLogin) {
       applyEmailStep();
       applyPasswordStep();
       forceHide();
 
       /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
-      document.querySelectorAll("a[href*='forgotpassword'],a[href*='businessfreetrial']").forEach(function (a) {
+      document.querySelectorAll("a[href*='forgotpassword'],a[href*='resetpassword'],a[href*='businessfreetrial']").forEach(function (a) {
         if (a.id === "mo-forgot") return;
         var c = a.closest(".col-auto");
         if (c) c.style.setProperty("display", "none", "important");
