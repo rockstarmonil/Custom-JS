@@ -340,13 +340,19 @@
     if (!document.getElementById("mo-fp-css")) {
       var fpCss =
         /* Page background */
-        "body,#root,#login-body{background:#eef1f7!important;}" +
+        "body{" +
+        "min-height:100vh!important;margin:0!important;padding:0!important;" +
+        "display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;" +
+        "background:#eef1f7!important;" +
+        "}" +
+        "#root,#login-body{background:#eef1f7!important;}" +
         "#root>div{background:#eef1f7!important;}" +
         "#login-header{display:none!important;}" +
-        "#login-body,.container-fluid{" +
+        "body #login-body, body .container-fluid{" +
+        "width:100%!important;max-  width:100%!important;margin:0 auto!important;padding:24px 16px!important;" +
+        "display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;" +
+        "box-sizing:border-box!important;background:transparent!important;float:none!important;" +
         "height:auto!important;min-height:unset!important;" +
-        "width:100%!important;max-width:100%!important;margin:0 auto!important;padding:0!important;" +
-        "display:block!important;float:none!important;position:relative!important;" +
         "}" +
         "#root .d-flex.flex-column.align-items-center{" +
         "align-items:center!important;" +
@@ -358,14 +364,16 @@
         "}" +
 
         /* Card */
-        ".w-100.border.rounded-4,#login-wrapper{" +
+        "body #login-body .container-fluid #login-wrapper, body #login-wrapper, #login-wrapper{" +
         "background:#fff!important;border:1px solid #e0e7ef!important;" +
         "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
         "max-width:560px!important;width:100%!important;" +
-        "margin:40px auto!important;display:block!important;float:none!important;" +
+        "margin-left:auto!important;margin-right:auto!important;" +
+        "margin-top:0!important;margin-bottom:0!important;" +
+        "display:block!important;float:none!important;" +
         "position:relative!important;left:auto!important;right:auto!important;" +
         "padding:36px 40px 32px!important;box-sizing:border-box!important;" +
-        "height:auto!important;min-height:unset!important;" +
+        "height:auto!important;min-height:unset!important;align-self:center!important;" +
         "}" +
 
         /* Form override (remove grey background) */
