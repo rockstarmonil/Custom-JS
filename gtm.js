@@ -6,8 +6,7 @@
                 window.location.pathname.indexOf("/moas/idp/userlogin") !== -1;
   var isForgot = window.location.pathname.indexOf("/moas/idp/forgotpassword") !== -1;
   var isOtp = window.location.pathname.indexOf("/moas/idp/validatenextfactor") !== -1;
-  var isChangePass = window.location.pathname.indexOf("/moas/idp/changepassword") !== -1 ||
-                     window.location.pathname.indexOf("/moas/idp/savechangepassword") !== -1;
+  var isChangePass = window.location.pathname.indexOf("/moas/idp/changepassword") !== -1;
   if (!isLogin && !isForgot && !isOtp && !isChangePass) return;
 
   /* ── FONT ── */
