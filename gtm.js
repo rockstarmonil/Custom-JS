@@ -1,11 +1,14 @@
 (function () {
   "use strict";
 
-  /* GUARD — active on login page, forgot-password page, and OTP verification page */
-  var isLogin = window.location.pathname.indexOf("/moas/login") !== -1;
+  /* GUARD — active on login page, forgot-password page, OTP verification page, and change password page */
+  var isLogin = window.location.pathname.indexOf("/moas/login") !== -1 ||
+                window.location.pathname.indexOf("/moas/idp/userlogin") !== -1;
   var isForgot = window.location.pathname.indexOf("/moas/idp/forgotpassword") !== -1;
   var isOtp = window.location.pathname.indexOf("/moas/idp/validatenextfactor") !== -1;
-  if (!isLogin && !isForgot && !isOtp) return;
+  var isChangePass = window.location.pathname.indexOf("/moas/idp/changepassword") !== -1 ||
+                     window.location.pathname.indexOf("/moas/idp/savechangepassword") !== -1;
+  if (!isLogin && !isForgot && !isOtp && !isChangePass) return;
 
   /* ── FONT ── */
   if (!document.getElementById("mo-font")) {
@@ -19,7 +22,18 @@
   if (!document.getElementById("mo-css")) {
     var css =
       /* Page bg — keep full viewport height so flex centering works */
-      "#login-main-body{background:#eef1f7!important;font-family:'Figtree',sans-serif!important;min-height:100vh!important;}" +
+      "#login-main-body{" +
+      "background:#eef1f7!important;" +
+      "font-family:'Figtree',sans-serif!important;" +
+      "min-height:100vh!important;" +
+      "display:flex!important;" +
+      "align-items:center!important;" +
+      "justify-content:center!important;" +
+      "flex-direction:column!important;" +
+      "box-sizing:border-box!important;" +
+      "padding:40px 16px!important;" +
+      "}" +
+      "#login-body > br,#login-main-body > br{display:none!important;}" +
 
       /* Logo — hidden */
       "#login-header{display:none!important;}" +
@@ -32,11 +46,11 @@
       "}" +
 
       /* Form: stretch children to full width (removes Bootstrap center alignment) */
-      "#enduserloginform{align-items:stretch!important;}" +
+      "#enduserloginform,#idploginform{align-items:stretch!important;}" +
 
       /* Inner containers: full width, no extra padding */
-      "#enduserloginform .w-75,#enduserloginform .px-4{width:100%!important;padding-left:0!important;padding-right:0!important;max-width:100%!important;}" +
-      "#enduserloginform .row{margin:0!important;}" +
+      "#enduserloginform .w-75,#enduserloginform .px-4,#idploginform .w-75,#idploginform .px-4{width:100%!important;padding-left:0!important;padding-right:0!important;max-width:100%!important;}" +
+      "#enduserloginform .row,#idploginform .row{margin:0!important;}" +
 
       /* Hide original page elements */
       ".login-header.custom-title,hr,#dynamicUserName,#feedback-msg,#username-error,br.my-2," +
@@ -95,7 +109,7 @@
       "}" +
       "#loginbutton:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
       /* button row — left align the submit button */
-      "#enduserloginform .row div:has(#loginbutton){text-align:left;display:block;}" +
+      "#enduserloginform .row div:has(#loginbutton),#idploginform .row div:has(#loginbutton){text-align:left!important;display:block!important;}" +
 
       /* Mobile */
       "@media(max-width:576px){" +
@@ -172,6 +186,20 @@
     if (emailLbl) {
       var emailFg = emailLbl.closest(".mo-fg") || emailLbl.parentElement;
       if (emailFg) emailFg.style.setProperty("display", "none", "important");
+    }
+
+    /* LOG IN title — insert once before any form child */
+    var wrapper = document.getElementById("login-wrapper");
+    if (wrapper && !document.getElementById("mo-title")) {
+      var t = document.createElement("span");
+      t.id = "mo-title"; t.textContent = "LOG IN";
+      wrapper.insertBefore(t, wrapper.firstChild);
+    }
+
+    /* Button label */
+    var btn = document.getElementById("loginbutton");
+    if (btn && btn.value !== "LOG IN \u2192") {
+      btn.value = "LOG IN \u2192";
     }
 
     if (document.getElementById("mo-pw-lbl")) return; // already applied
@@ -530,6 +558,286 @@
     document.body.appendChild(otpDone);
   }
 
+  /* ── CHANGE PASSWORD PAGE (/moas/idp/changepassword) ── */
+  function applyChangePasswordPage() {
+    if (!isChangePass) return;
+
+    /* CSS — inject once */
+    if (!document.getElementById("mo-cp-css")) {
+      var cpCss =
+        /* Page bg */
+        "body,#login-body{background:#eef1f7!important;font-family:'Figtree',sans-serif!important;min-height:100vh!important;}" +
+        "#login-header{display:none!important;}" +
+
+        /* Card wrapper */
+        "#login-wrapper{" +
+        "background:#fff!important;border:1px solid #e0e7ef!important;" +
+        "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
+        "padding:36px 40px 32px!important;max-width:560px!important;width:100%!important;" +
+        "margin:40px auto!important;box-sizing:border-box!important;" +
+        "}" +
+
+        /* Title styling */
+        "#login-wrapper .login-header{" +
+        "display:flex!important;justify-content:space-between!important;align-items:center!important;" +
+        "font-family:'Figtree',sans-serif!important;font-size:24px!important;" +
+        "font-weight:800!important;color:#0d1b2a!important;text-transform:uppercase!important;" +
+        "letter-spacing:-.3px!important;margin-bottom:20px!important;text-align:left!important;" +
+        "border:none!important;padding:0!important;" +
+        "}" +
+
+        /* Hide line separators */
+        "#login-wrapper hr{display:none!important;}" +
+
+        /* Form stack */
+        "#passwordform .row{margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;}" +
+        "#passwordform .col-md-5,#passwordform .col-md-8,#passwordform .offset-md-1,#passwordform .offset-md-2{" +
+        "width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;text-align:left!important;" +
+        "}" +
+
+        /* Password requirements alert box customization */
+        ".password-padding{padding:0!important;margin:10px 0 20px 0!important;width:100%!important;}" +
+        ".password-padding .alert-info{" +
+        "background:transparent!important;border:none!important;" +
+        "padding:0!important;margin:0!important;width:100%!important;" +
+        "}" +
+        ".password-padding h5{" +
+        "font-family:'Figtree',sans-serif!important;font-size:14px!important;" +
+        "font-weight:700!important;color:#3c515d!important;" +
+        "margin-bottom:8px!important;" +
+        "}" +
+        "#listcontent{padding-left:0!important;margin:0!important;list-style:none!important;}" +
+        "#listcontent li{" +
+        "font-family:'Figtree',sans-serif!important;font-size:13px!important;" +
+        "margin-bottom:6px!important;" +
+        "display:flex!important;align-items:center!important;" +
+        "gap:8px!important;" +
+        "list-style:none!important;" +
+        "position:relative!important;" +
+        "padding-left:20px!important;" +
+        "text-align:left!important;" +
+        "transition:color 0.2s ease!important;" +
+        "}" +
+        "#listcontent li.mo-valid{color:#2e7d32!important;}" +
+        "#listcontent li.mo-invalid{color:#82829c!important;}" +
+        "#listcontent li.mo-valid::before{" +
+        "content:'✓'!important;position:absolute!important;left:0!important;" +
+        "color:#2e7d32!important;font-weight:bold!important;" +
+        "}" +
+        "#listcontent li.mo-invalid::before{" +
+        "content:'○'!important;position:absolute!important;left:0!important;" +
+        "color:#82829c!important;font-weight:normal!important;font-size:14px!important;" +
+        "}" +
+
+        /* Style label/text above inputs */
+        "#passwordform p.text-left{" +
+        "display:block!important;color:#3c515d!important;font-size:14px!important;" +
+        "font-weight:700!important;font-family:'Figtree',sans-serif!important;" +
+        "text-align:left!important;margin:0 0 6px 0!important;" +
+        "}" +
+
+        /* Style inputs */
+        "#newPassword,#confirmPassword{" +
+        "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
+        "padding:0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
+        "color:#000933!important;background:#fff!important;width:100%!important;" +
+        "box-shadow:none!important;outline:none!important;box-sizing:border-box!important;" +
+        "margin-bottom:16px!important;display:block!important;" +
+        "}" +
+        "#newPassword:focus,#confirmPassword:focus{" +
+        "border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;" +
+        "}" +
+
+        /* Submit button styling */
+        "#validate{" +
+        "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
+        "gap:8px!important;min-height:40px!important;padding:8px 24px!important;" +
+        "border-radius:0!important;background:#0A55D7!important;background-color:#0A55D7!important;" +
+        "border:none!important;color:#fff!important;font-family:'Figtree',sans-serif!important;" +
+        "font-size:14px!important;font-weight:700!important;letter-spacing:.6px!important;" +
+        "text-transform:uppercase!important;cursor:pointer!important;box-shadow:none!important;" +
+        "width:auto!important;margin:10px auto 10px 0!important;align-self:flex-start!important;" +
+        "}" +
+        "#validate:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
+
+        /* Hide Go Back to Login link */
+        "#passwordform a.btn-link{display:none!important;}";
+
+      var cpSt = document.createElement("style");
+      cpSt.id = "mo-cp-css"; cpSt.textContent = cpCss;
+      document.head.appendChild(cpSt);
+    }
+
+    var fpForm = document.getElementById("passwordform");
+    if (!fpForm) return;
+
+    /* Update title to LOGIN DETAILS with close x button */
+    var h3 = document.querySelector(".login-header");
+    if (h3 && !document.getElementById("mo-cp-close")) {
+      h3.textContent = "LOGIN DETAILS";
+      
+      var closeBtn = document.createElement("a");
+      closeBtn.id = "mo-cp-close";
+      closeBtn.href = "login";
+      closeBtn.innerHTML = "&times;";
+      closeBtn.style.color = "#a0aab6";
+      closeBtn.style.textDecoration = "none";
+      closeBtn.style.fontSize = "24px";
+      closeBtn.style.fontWeight = "400";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.style.lineHeight = "1";
+      h3.appendChild(closeBtn);
+    }
+
+    /* Add * to labels */
+    document.querySelectorAll("#passwordform p.text-left").forEach(function (p) {
+      var t = p.textContent.trim();
+      if (t.indexOf("New Password") !== -1 && !p.querySelector(".mo-req")) {
+        p.innerHTML = 'New password <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
+      } else if (t.indexOf("Confirm Password") !== -1 && !p.querySelector(".mo-req")) {
+        p.innerHTML = 'Confirm password <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
+      }
+    });
+
+    /* Deduplicate requirements list if Xecurify script duplicated them */
+    var listcontent = document.getElementById("listcontent");
+    if (listcontent) {
+      var items = listcontent.querySelectorAll("li");
+      var seen = {};
+      items.forEach(function (li) {
+        var txt = li.textContent.trim();
+        if (!txt || seen[txt]) {
+          li.remove();
+        } else {
+          seen[txt] = true;
+        }
+      });
+    }
+
+    /* Move requirements block below new password input (above confirm password input) */
+    var newPasswordCol = document.getElementById("newPassword") ? document.getElementById("newPassword").closest("div") : null;
+    var requirementsBlock = document.querySelector(".password-padding");
+    if (newPasswordCol && requirementsBlock && requirementsBlock.previousSibling !== newPasswordCol) {
+      newPasswordCol.parentNode.insertBefore(requirementsBlock, newPasswordCol.nextSibling);
+    }
+
+    /* Append strength meter */
+    if (requirementsBlock && !document.getElementById("mo-strength-container")) {
+      var strengthContainer = document.createElement("div");
+      strengthContainer.id = "mo-strength-container";
+      strengthContainer.style.width = "100%";
+      strengthContainer.style.boxSizing = "border-box";
+      strengthContainer.innerHTML =
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 6px 0; width:100%;">' +
+          '<span id="mo-strength-label" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#3c515d;">Password strength</span>' +
+          '<span id="mo-strength-value" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#a0aab6;">Weak</span>' +
+        '</div>' +
+        '<div id="mo-strength-bar-wrap" style="height:4px; background:#e0e7ef; border-radius:2px; overflow:hidden; width:100%;">' +
+          '<div id="mo-strength-bar-fill" style="height:100%; width:0%; background:#e0e7ef; transition: width 0.3s ease, background-color 0.3s ease;"></div>' +
+        '</div>';
+      requirementsBlock.appendChild(strengthContainer);
+    }
+
+    /* Dynamic Validation Function */
+    function updatePasswordRequirementsAndStrength() {
+      var newPasswordInput = document.getElementById("newPassword");
+      if (!newPasswordInput) return;
+      var val = newPasswordInput.value || "";
+
+      var listItems = document.querySelectorAll("#listcontent li");
+      var score = 0;
+      var totalRules = listItems.length;
+
+      listItems.forEach(function (li) {
+        var txt = li.textContent.trim().toLowerCase();
+        var isValid = false;
+
+        if (txt.indexOf("minimum") !== -1 || txt.indexOf("characters") !== -1) {
+          var minMatch = txt.match(/minimum\s+(\d+)/) || txt.match(/(\d+)-(\d+)\s+characters/);
+          if (minMatch) {
+            var minLen = parseInt(minMatch[1], 10);
+            if (val.length >= minLen) isValid = true;
+          } else {
+            if (val.length >= 6) isValid = true;
+          }
+        } else if (txt.indexOf("maximum") !== -1) {
+          var maxMatch = txt.match(/maximum\s+(\d+)/);
+          if (maxMatch) {
+            var maxLen = parseInt(maxMatch[1], 10);
+            if (val.length <= maxLen && val.length > 0) isValid = true;
+          } else {
+            if (val.length <= 20 && val.length > 0) isValid = true;
+          }
+        } else if (txt.indexOf("uppercase") !== -1) {
+          if (/[A-Z]/.test(val)) isValid = true;
+        } else if (txt.indexOf("lowercase") !== -1) {
+          if (/[a-z]/.test(val)) isValid = true;
+        } else if (txt.indexOf("number") !== -1 || txt.indexOf("digit") !== -1) {
+          if (/[0-9]/.test(val)) isValid = true;
+        } else if (txt.indexOf("symbol") !== -1 || txt.indexOf("special") !== -1 || txt.indexOf("allowed symbols") !== -1) {
+          if (/[!@#\$%\^&\*\-_\.]/.test(val)) isValid = true;
+        } else {
+          if (val.length > 0) isValid = true;
+        }
+
+        if (isValid) {
+          li.classList.add("mo-valid");
+          li.classList.remove("mo-invalid");
+          score++;
+        } else {
+          li.classList.add("mo-invalid");
+          li.classList.remove("mo-valid");
+        }
+      });
+
+      var strengthValue = document.getElementById("mo-strength-value");
+      var strengthFill = document.getElementById("mo-strength-bar-fill");
+      if (strengthValue && strengthFill) {
+        if (val.length === 0) {
+          strengthValue.textContent = "Weak";
+          strengthValue.style.color = "#a0aab6";
+          strengthFill.style.width = "0%";
+          strengthFill.style.backgroundColor = "#e0e7ef";
+        } else {
+          var pct = Math.round((score / totalRules) * 100);
+          strengthFill.style.width = pct + "%";
+
+          if (pct < 40) {
+            strengthValue.textContent = "Weak";
+            strengthValue.style.color = "#e02020";
+            strengthFill.style.backgroundColor = "#e02020";
+          } else if (pct < 70) {
+            strengthValue.textContent = "Medium";
+            strengthValue.style.color = "#ff9800";
+            strengthFill.style.backgroundColor = "#ff9800";
+          } else if (pct < 100) {
+            strengthValue.textContent = "Strong";
+            strengthValue.style.color = "#0A55D7";
+            strengthFill.style.backgroundColor = "#0A55D7";
+          } else {
+            strengthValue.textContent = "Sufficient";
+            strengthValue.style.color = "#2e7d32";
+            strengthFill.style.backgroundColor = "#2e7d32";
+          }
+        }
+      }
+    }
+
+    /* Bind events for dynamic updates */
+    var newPasswordInput = document.getElementById("newPassword");
+    if (newPasswordInput && !newPasswordInput.dataset.moListener) {
+      newPasswordInput.dataset.moListener = "true";
+      newPasswordInput.addEventListener("input", updatePasswordRequirementsAndStrength);
+      updatePasswordRequirementsAndStrength();
+    }
+
+    /* Update button text to SAVE */
+    var saveBtn = document.getElementById("validate");
+    if (saveBtn) {
+      saveBtn.value = "SAVE";
+    }
+  }
+
   /* ── MAIN RUN ── */
   function run() {
     if (isLogin) {
@@ -551,6 +859,7 @@
 
     if (isForgot) { applyForgotPage(); }
     if (isOtp)    { applyOtpPage(); }
+    if (isChangePass) { applyChangePasswordPage(); }
   }
 
   /* ── TIMING ── */
@@ -566,6 +875,7 @@
     if (isLogin) { forceHide(); applyPasswordStep(); }
     if (isForgot) { applyForgotPage(); }
     if (isOtp)    { applyOtpPage(); }
+    if (isChangePass) { applyChangePasswordPage(); }
   });
   observer.observe(document.body, {
     childList: true,
