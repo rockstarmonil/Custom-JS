@@ -872,6 +872,74 @@
     if (saveBtn) {
       saveBtn.value = "SAVE";
     }
+
+    /* Disable native HTML5 validation bubbles/hovers */
+    var form = document.getElementById("passwordform");
+    if (form) {
+      form.setAttribute("novalidate", "true");
+    }
+    var confirmPasswordInput = document.getElementById("confirmPassword");
+    if (newPasswordInput) {
+      newPasswordInput.removeAttribute("title");
+    }
+    if (confirmPasswordInput) {
+      confirmPasswordInput.removeAttribute("title");
+    }
+
+    /* Shift the error display container (#pwd_strength) below the confirm password input */
+    var pwdStrengthDiv = document.getElementById("pwd_strength");
+    if (confirmPasswordInput && pwdStrengthDiv && pwdStrengthDiv.parentNode !== confirmPasswordInput.parentNode) {
+      confirmPasswordInput.parentNode.appendChild(pwdStrengthDiv);
+      pwdStrengthDiv.style.fontFamily = "'Figtree', sans-serif";
+      pwdStrengthDiv.style.fontSize = "13px";
+      pwdStrengthDiv.style.fontWeight = "700";
+      pwdStrengthDiv.style.textAlign = "left";
+      pwdStrengthDiv.style.marginTop = "6px";
+      pwdStrengthDiv.style.marginBottom = "0";
+      pwdStrengthDiv.style.display = "block";
+    }
+
+    /* Bind custom validation on submit to show neat errors instead of bubbles */
+    if (form && !form.dataset.moValidationBound) {
+      form.dataset.moValidationBound = "true";
+      form.addEventListener("submit", function (e) {
+        var val = newPasswordInput ? newPasswordInput.value : "";
+        var confirmVal = confirmPasswordInput ? confirmPasswordInput.value : "";
+        var pwdStrengthDiv = document.getElementById("pwd_strength");
+
+        if (!val) {
+          e.preventDefault();
+          if (pwdStrengthDiv) {
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>New password is required.</font>";
+          }
+          if (newPasswordInput) newPasswordInput.focus();
+          return;
+        }
+
+        var invalidItems = document.querySelectorAll("#listcontent li.mo-invalid");
+        if (invalidItems.length > 0) {
+          e.preventDefault();
+          if (pwdStrengthDiv) {
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>Please satisfy all password requirements.</font>";
+          }
+          if (newPasswordInput) newPasswordInput.focus();
+          return;
+        }
+
+        if (val !== confirmVal) {
+          e.preventDefault();
+          if (pwdStrengthDiv) {
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>The two passwords must match.</font>";
+          }
+          if (confirmPasswordInput) confirmPasswordInput.focus();
+          return;
+        }
+
+        if (pwdStrengthDiv) {
+          pwdStrengthDiv.innerHTML = "";
+        }
+      });
+    }
   }
 
   /* ── MAIN RUN ── */
