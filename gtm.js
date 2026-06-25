@@ -11,10 +11,6 @@
         var sessionLocale = sessionStorage.getItem("request_locale");
         if (sessionLocale) return sessionLocale.toLowerCase();
       } catch (e) {}
-      try {
-        var localLocale = localStorage.getItem("request_locale");
-        if (localLocale) return localLocale.toLowerCase();
-      } catch (e) {}
       return null;
     }
 
@@ -320,8 +316,11 @@
     }
     var emailLbl = document.getElementById("mo-email-lbl");
     if (emailLbl) {
-      var origEmailLbl = document.querySelector("label[for='username']");
-      var emailLblText = origEmailLbl ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
+      var origEmailLbl = document.querySelector("label[for='username']:not(#mo-email-lbl):not(#mo-user-lbl)");
+      if (origEmailLbl) {
+        origEmailLbl.style.setProperty("display", "none", "important");
+      }
+      var emailLblText = (origEmailLbl && origEmailLbl.textContent.trim()) ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
       emailLbl.innerHTML = emailLblText + ' <span class="mo-req">*</span>';
     }
 
@@ -392,8 +391,11 @@
       pwLbl.setAttribute("for", "plaintextPassword");
       pwField.parentNode.insertBefore(pwLbl, pwField);
     }
-    var origPwLbl = document.querySelector("label[for='plaintextPassword']");
-    var pwLblText = origPwLbl ? origPwLbl.textContent.replace(/\*/g, "").trim() : "Password";
+    var origPwLbl = document.querySelector("label[for='plaintextPassword']:not(#mo-pw-lbl)");
+    if (origPwLbl) {
+      origPwLbl.style.setProperty("display", "none", "important");
+    }
+    var pwLblText = (origPwLbl && origPwLbl.textContent.trim()) ? origPwLbl.textContent.replace(/\*/g, "").trim() : "Password";
     pwLbl.innerHTML = pwLblText + ' <span class="mo-req">*</span>';
 
     /* Show read-only username above password field */
@@ -414,8 +416,8 @@
     }
     var userLblEl = document.getElementById("mo-user-lbl");
     if (userLblEl) {
-      var origEmailLbl = document.querySelector("label[for='username']");
-      var emailLblText = origEmailLbl ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
+      var origEmailLbl = document.querySelector("label[for='username']:not(#mo-email-lbl):not(#mo-user-lbl)");
+      var emailLblText = (origEmailLbl && origEmailLbl.textContent.trim()) ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
       userLblEl.textContent = emailLblText;
     }
 
@@ -663,17 +665,19 @@
     fpSub.textContent = fpSubtitleText;
 
     /* Replace/create label text */
-    var origLabel = fpForm.querySelector("label[for='emailAddress']") || fpForm.querySelector("label[for='username']") || document.getElementById("mo-fp-lbl");
-    if (!origLabel) {
-      origLabel = document.createElement("label");
-      origLabel.setAttribute("for", emailInput.id);
-      origLabel.id = "mo-fp-lbl";
-      emailInput.parentNode.insertBefore(origLabel, emailInput);
-    } else if (origLabel.id !== "mo-fp-lbl") {
-      origLabel.id = "mo-fp-lbl"; origLabel.className = "";
+    var fpLbl = document.getElementById("mo-fp-lbl");
+    if (!fpLbl) {
+      fpLbl = document.createElement("label");
+      fpLbl.id = "mo-fp-lbl";
+      fpLbl.setAttribute("for", emailInput.id);
+      emailInput.parentNode.insertBefore(fpLbl, emailInput);
     }
-    var origLabelText = origLabel ? origLabel.textContent.replace(/\*/g, "").trim() : "Email address";
-    origLabel.innerHTML = origLabelText + ' <span class="mo-req">*</span>';
+    var origLabel = fpForm.querySelector("label[for='emailAddress']:not(#mo-fp-lbl)") || fpForm.querySelector("label[for='username']:not(#mo-fp-lbl)");
+    if (origLabel) {
+      origLabel.style.setProperty("display", "none", "important");
+    }
+    var origLabelText = (origLabel && origLabel.textContent.trim()) ? origLabel.textContent.replace(/\*/g, "").trim() : "Email address";
+    fpLbl.innerHTML = origLabelText + ' <span class="mo-req">*</span>';
 
     /* Fix input placeholder */
     emailInput.setAttribute("placeholder", "email");
@@ -807,8 +811,11 @@
       otpLbl.setAttribute("for", "otpToken");
       otpInput.parentNode.insertBefore(otpLbl, otpInput);
     }
-    var origOtpLbl = document.querySelector("label[for='otpToken']");
-    var otpLblText = origOtpLbl ? origOtpLbl.textContent.replace(/\*/g, "").trim() : "Enter OTP here";
+    var origOtpLbl = document.querySelector("label[for='otpToken']:not(#mo-otp-lbl)");
+    if (origOtpLbl) {
+      origOtpLbl.style.setProperty("display", "none", "important");
+    }
+    var otpLblText = (origOtpLbl && origOtpLbl.textContent.trim()) ? origOtpLbl.textContent.replace(/\*/g, "").trim() : "Enter OTP here";
     otpLbl.innerHTML = otpLblText + ' <span class="mo-req">*</span>';
 
     /* Placeholder */
