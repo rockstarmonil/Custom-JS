@@ -1,6 +1,56 @@
 (function () {
   "use strict";
 
+  /* ── LOCALE & REDIRECT SYNC ── */
+  function syncLocaleParam() {
+    var params = new URLSearchParams(window.location.search);
+    var urlLocale = params.get("request_locale");
+
+    function getStoredLocale() {
+      try {
+        var sessionLocale = sessionStorage.getItem("request_locale");
+        if (sessionLocale) return sessionLocale.toLowerCase();
+      } catch (e) {}
+      try {
+        var localLocale = localStorage.getItem("request_locale");
+        if (localLocale) return localLocale.toLowerCase();
+      } catch (e) {}
+      try {
+        var match = document.cookie.match(new RegExp('(^| )request_locale=([^;]+)'));
+        if (match) return match[2].toLowerCase();
+      } catch (e) {}
+      return null;
+    }
+
+    function saveLocale(locale) {
+      locale = locale.toLowerCase();
+      try {
+        sessionStorage.setItem("request_locale", locale);
+      } catch (e) {}
+      try {
+        localStorage.setItem("request_locale", locale);
+      } catch (e) {}
+      try {
+        document.cookie = "request_locale=" + locale + "; path=/; max-age=31536000";
+      } catch (e) {}
+    }
+
+    if (urlLocale) {
+      saveLocale(urlLocale);
+    } else {
+      var stored = getStoredLocale();
+      if (stored) {
+        params.set("request_locale", stored);
+        var newSearch = params.toString();
+        var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?" + newSearch + window.location.hash;
+        window.location.replace(newUrl);
+      }
+    }
+  }
+
+  // Sync redirect check runs immediately
+  syncLocaleParam();
+
   /* ── PAGE DETECTION HELPERS ── */
   function checkIsLogin() {
     var path = window.location.pathname.toLowerCase();
@@ -51,8 +101,70 @@
     return false;
   }
 
+  function getLocale() {
+    var params = new URLSearchParams(window.location.search);
+    var urlLocale = params.get("request_locale");
+    if (urlLocale) {
+      return urlLocale.toLowerCase();
+    }
+    try {
+      var sessionLocale = sessionStorage.getItem("request_locale");
+      if (sessionLocale) return sessionLocale.toLowerCase();
+    } catch (e) {}
+    try {
+      var match = document.cookie.match(new RegExp('(^| )request_locale=([^;]+)'));
+      if (match) return match[2].toLowerCase();
+    } catch (e) {}
+    try {
+      var navLang = navigator.language || navigator.userLanguage || "en";
+      return navLang.substring(0, 2).toLowerCase();
+    } catch (e) {}
+    return "en";
+  }
+
+  function isRtlLocale(locale) {
+    var rtlLocales = ["ar", "he", "fa", "ur"];
+    return rtlLocales.indexOf(locale) !== -1;
+  }
+
+  /* Translation dictionary only for 100% custom non-miniOrange elements */
+  var translations = {
+    en: {
+      passwordStrength: "Password strength",
+      strengthWeak: "Weak",
+      strengthMedium: "Medium",
+      strengthStrong: "Strong",
+      strengthSufficient: "Sufficient",
+      newPasswordRequired: "New password is required.",
+      satisfyRequirements: "Please satisfy all password requirements.",
+      passwordsMustMatch: "The two passwords must match."
+    },
+    ar: {
+      passwordStrength: "قوة كلمة المرور",
+      strengthWeak: "ضعيف",
+      strengthMedium: "متوسط",
+      strengthStrong: "قوي",
+      strengthSufficient: "كافٍ",
+      newPasswordRequired: "كلمة المرور الجديدة مطلوبة.",
+      satisfyRequirements: "يرجى تلبية جميع متطلبات كلمة المرور.",
+      passwordsMustMatch: "يجب أن تتطابق كلمتا المرور."
+    }
+  };
+
+  function getTranslation(key) {
+    var locale = getLocale();
+    var dict = translations[locale] || translations["en"];
+    return dict[key] || translations["en"][key] || "";
+  }
+
   /* ── INJECT FONT AND CSS ── */
   function injectFontAndCss() {
+    var locale = getLocale();
+    if (isRtlLocale(locale)) {
+      document.documentElement.setAttribute("dir", "rtl");
+    } else {
+      document.documentElement.removeAttribute("dir");
+    }
 
     /* ── FONT ── */
     if (!document.getElementById("mo-font")) {
@@ -160,7 +272,16 @@
         "#login-wrapper{padding:24px 18px 20px!important;}" +
         ".mo-lbl,#username,#plaintextPassword{font-size:16px!important;}" +
         "#loginbutton{font-size:12px!important;}" +
-        "}";
+        "}" +
+
+        /* RTL Overrides */
+        "[dir='rtl'] #mo-title{text-align:right!important;}" +
+        "[dir='rtl'] .mo-lbl{text-align:right!important;}" +
+        "[dir='rtl'] #enduserloginform .row div:has(#loginbutton),[dir='rtl'] #idploginform .row div:has(#loginbutton){text-align:right!important;}" +
+        "[dir='rtl'] .mo-eye{right:auto!important;left:10px!important;}" +
+        "[dir='rtl'] #plaintextPassword,[dir='rtl'] .mo-styled-input{padding-right:12px!important;padding-left:42px!important;}" +
+        "[dir='rtl'] #mo-bottom{justify-content:flex-start!important;}" +
+        "[dir='rtl'] #loginbutton{flex-direction:row-reverse!important;}";
 
       var st = document.createElement("style");
       st.id = "mo-css"; st.textContent = css;
@@ -174,75 +295,51 @@
     return a ? a.href : "#";
   }
 
-  /*
-   * getForgotLinkText()
-   * Read the platform's own "Forgot password" link text so it is already
-   * translated by the server.  Falls back to the link's href-based text or
-   * an empty string so the anchor still works even if no text is found.
-   */
-  function getForgotLinkText() {
-    var a = document.querySelector("a[href*='forgotpassword'], a[href*='resetpassword']");
-    if (a) {
-      var txt = a.textContent.trim();
-      if (txt) return txt;
-    }
-    return "";
-  }
-
   /* ── STEP 1: Email page UI ── */
   function applyEmailStep() {
     var wrapper = document.getElementById("login-wrapper");
     if (!wrapper) return;
 
-    /*
-     * LOG IN title — read from the platform's existing .login-header or
-     * .custom-title element so the server-translated text is preserved.
-     * Only inject #mo-title if the platform has not already rendered a
-     * visible heading we can promote.
-     */
-    if (!document.getElementById("mo-title")) {
-      var existingHeader = document.querySelector(".login-header, .custom-title");
-      var titleText = existingHeader ? existingHeader.textContent.trim() : "";
-      var t = document.createElement("span");
+    /* LOG IN title — insert once before any form child */
+    var t = document.getElementById("mo-title");
+    if (!t) {
+      t = document.createElement("span");
       t.id = "mo-title";
-      t.textContent = titleText; /* may be "" — CSS hides the original header */
       wrapper.insertBefore(t, wrapper.firstChild);
     }
+    var origHeader = document.querySelector(".login-header");
+    var titleText = origHeader ? origHeader.textContent.trim() : "LOG IN";
+    t.textContent = titleText;
 
-    /*
-     * Email label — read the platform's own <label for="username"> rather
-     * than injecting an English string.  We only add the required-star span
-     * for visual styling; the label text itself comes from the DOM.
-     */
+    /* Email label above the username input */
     var userDiv = document.getElementById("userName");
-    if (userDiv && !document.getElementById("mo-email-lbl")) {
-      var fg = document.createElement("div"); fg.className = "mo-fg";
+    var fg = document.getElementById("mo-email-fg");
+    if (userDiv && !fg) {
+      fg = document.createElement("div"); fg.className = "mo-fg"; fg.id = "mo-email-fg";
       var lbl = document.createElement("label");
       lbl.id = "mo-email-lbl"; lbl.className = "mo-lbl";
       lbl.setAttribute("for", "username");
-
-      /* Try to find the platform's label for this field */
-      var platformLbl = document.querySelector("label[for='username']");
-      var lblText = platformLbl ? platformLbl.textContent.trim() : "";
-      lbl.innerHTML = lblText + ' <span class="mo-req">*</span>';
-
       fg.appendChild(lbl);
       userDiv.parentNode.insertBefore(fg, userDiv);
       fg.appendChild(userDiv);
-
-      /* Remove the original platform label now that we have promoted it */
-      if (platformLbl && platformLbl !== lbl) {
-        platformLbl.style.display = "none";
-      }
-
-      /* Do NOT overwrite the placeholder — the platform sets it translated */
+      var inp = document.getElementById("username");
+      if (inp) inp.setAttribute("placeholder", "email");
+    }
+    var emailLbl = document.getElementById("mo-email-lbl");
+    if (emailLbl) {
+      var origEmailLbl = document.querySelector("label[for='username']");
+      var emailLblText = origEmailLbl ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
+      emailLbl.innerHTML = emailLblText + ' <span class="mo-req">*</span>';
     }
 
-    /* Button label — keep platform text, just ensure dataset flag is set so
-       we don't re-process on subsequent observer calls */
+    /* Button label */
     var btn = document.getElementById("loginbutton");
-    if (btn && !btn.dataset.mo) {
-      /* Leave btn.value as-is: the platform has already set translated text */
+    if (btn) {
+      var isRtl = isRtlLocale(getLocale());
+      var arrowStr = isRtl ? " \u2190" : " \u2192";
+      var origBtnText = btn.value || btn.textContent || "LOG IN";
+      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
+      btn.value = origBtnText + arrowStr;
       btn.dataset.mo = "1";
     }
 
@@ -265,61 +362,56 @@
     if (goBack) { goBack.style.setProperty("display", "none", "important"); }
 
     /* Hide the step-1 email label+input wrapper (Xecurify only hides #userName, not our wrapper) */
-    var emailLbl = document.getElementById("mo-email-lbl");
-    if (emailLbl) {
-      var emailFg = emailLbl.closest(".mo-fg") || emailLbl.parentElement;
-      if (emailFg) emailFg.style.setProperty("display", "none", "important");
+    var emailFg = document.getElementById("mo-email-fg");
+    if (emailFg) {
+      emailFg.style.setProperty("display", "none", "important");
     }
 
-    /* LOG IN title — same logic as applyEmailStep: read from existing header */
+    /* LOG IN title ── */
     var wrapper = document.getElementById("login-wrapper");
-    if (wrapper && !document.getElementById("mo-title")) {
-      var existingHeader = document.querySelector(".login-header, .custom-title");
-      var titleText = existingHeader ? existingHeader.textContent.trim() : "";
-      var t = document.createElement("span");
+    var t = document.getElementById("mo-title");
+    if (wrapper && !t) {
+      t = document.createElement("span");
       t.id = "mo-title";
-      t.textContent = titleText;
       wrapper.insertBefore(t, wrapper.firstChild);
     }
-
-    /* Button label — keep platform text unchanged */
-    /* (no assignment to btn.value here — let the platform text stand) */
-
-    if (document.getElementById("mo-pw-lbl")) return; // already applied
-
-    /*
-     * Password label — read from platform's <label for="plaintextPassword">
-     * so the translated text is used.
-     */
-    var platformPwLbl = document.querySelector("label[for='plaintextPassword']");
-    var pwLblText = platformPwLbl ? platformPwLbl.textContent.trim() : "";
-
-    var pwLbl = document.createElement("label");
-    pwLbl.id = "mo-pw-lbl"; pwLbl.className = "mo-lbl";
-    pwLbl.setAttribute("for", "plaintextPassword");
-    pwLbl.innerHTML = pwLblText + ' <span class="mo-req">*</span>';
-    pwField.parentNode.insertBefore(pwLbl, pwField);
-
-    /* Hide original platform label now that we promoted it */
-    if (platformPwLbl && platformPwLbl !== pwLbl) {
-      platformPwLbl.style.display = "none";
+    if (t) {
+      var origHeader = document.querySelector(".login-header");
+      var titleText = origHeader ? origHeader.textContent.trim() : "LOG IN";
+      t.textContent = titleText;
     }
 
-    /* Show read-only username above password field.
-       Label text: read from the platform's label for #username */
+    /* Button label */
+    var btn = document.getElementById("loginbutton");
+    if (btn) {
+      var isRtl = isRtlLocale(getLocale());
+      var arrowStr = isRtl ? " \u2190" : " \u2192";
+      var origBtnText = btn.value || btn.textContent || "LOG IN";
+      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
+      btn.value = origBtnText + arrowStr;
+    }
+
+    /* Password label above #plaintextPassword */
+    var pwLbl = document.getElementById("mo-pw-lbl");
+    if (!pwLbl) {
+      pwLbl = document.createElement("label");
+      pwLbl.id = "mo-pw-lbl"; pwLbl.className = "mo-lbl";
+      pwLbl.setAttribute("for", "plaintextPassword");
+      pwField.parentNode.insertBefore(pwLbl, pwField);
+    }
+    var origPwLbl = document.querySelector("label[for='plaintextPassword']");
+    var pwLblText = origPwLbl ? origPwLbl.textContent.replace(/\*/g, "").trim() : "Password";
+    pwLbl.innerHTML = pwLblText + ' <span class="mo-req">*</span>';
+
+    /* Show read-only username above password field */
     if (!document.getElementById("mo-user-display")) {
       var usernameVal = "";
       var unInp = document.getElementById("username");
       if (unInp && unInp.value) usernameVal = unInp.value;
       if (!usernameVal && dynUser) usernameVal = dynUser.textContent.trim();
       if (usernameVal) {
-        var platformEmailLbl = document.querySelector("label[for='username']") ||
-                               document.getElementById("mo-email-lbl");
-        var emailLblText = platformEmailLbl ? platformEmailLbl.textContent.replace("*", "").trim() : "";
-
-        var userFg = document.createElement("div"); userFg.className = "mo-fg";
-        var userLbl = document.createElement("label"); userLbl.className = "mo-lbl";
-        userLbl.textContent = emailLblText;
+        var userFg = document.createElement("div"); userFg.className = "mo-fg"; userFg.id = "mo-user-fg";
+        var userLbl = document.createElement("label"); userLbl.className = "mo-lbl"; userLbl.id = "mo-user-lbl";
         var userBox = document.createElement("div"); userBox.id = "mo-user-display";
         userBox.className = "mo-user-display";
         userBox.textContent = usernameVal;
@@ -327,40 +419,50 @@
         pwLbl.parentNode.insertBefore(userFg, pwLbl);
       }
     }
+    var userLblEl = document.getElementById("mo-user-lbl");
+    if (userLblEl) {
+      var origEmailLbl = document.querySelector("label[for='username']");
+      var emailLblText = origEmailLbl ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
+      userLblEl.textContent = emailLblText;
+    }
 
     /* Wrap password field in .mo-pw-wrap for eye toggle */
-    var wrap = document.createElement("div"); wrap.className = "mo-pw-wrap";
-    pwField.parentNode.insertBefore(wrap, pwField);
-    wrap.appendChild(pwField);
-    /* Do NOT overwrite placeholder — keep platform's translated placeholder */
+    if (pwField.parentNode.className !== "mo-pw-wrap") {
+      var wrap = document.createElement("div"); wrap.className = "mo-pw-wrap";
+      pwField.parentNode.insertBefore(wrap, pwField);
+      wrap.appendChild(pwField);
+      pwField.setAttribute("placeholder", "Password");
 
-    /* Eye toggle button — icon only, no visible text; aria-label is
-       intentionally left empty so screen readers fall back to the SVG title.
-       The icon itself is universal and needs no translation. */
-    var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-    var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-    var eyeBtn = document.createElement("button");
-    eyeBtn.type = "button"; eyeBtn.className = "mo-eye";
-    eyeBtn.setAttribute("aria-label", "");
-    eyeBtn.innerHTML = EYE_OFF;
-    eyeBtn.addEventListener("click", function () {
-      var show = pwField.type === "password";
-      pwField.type = show ? "text" : "password";
-      eyeBtn.innerHTML = show ? EYE_ON : EYE_OFF;
-    });
-    wrap.appendChild(eyeBtn);
+      /* Eye toggle button */
+      var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+      var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      var eyeBtn = document.createElement("button");
+      eyeBtn.type = "button"; eyeBtn.className = "mo-eye";
+      eyeBtn.setAttribute("aria-label", "Toggle password visibility");
+      eyeBtn.innerHTML = EYE_OFF;
+      eyeBtn.addEventListener("click", function () {
+        var show = pwField.type === "password";
+        pwField.type = show ? "text" : "password";
+        eyeBtn.innerHTML = show ? EYE_ON : EYE_OFF;
+      });
+      wrap.appendChild(eyeBtn);
+    }
 
-    /*
-     * Forgot password link — read text from the platform's own link so the
-     * translated label is used.  The href is also read from the platform link.
-     */
-    if (!document.getElementById("mo-bottom")) {
-      var row = document.createElement("div"); row.id = "mo-bottom";
+    /* Forgot password link only (no Remember me checkbox) */
+    var bottomRow = document.getElementById("mo-bottom");
+    if (!bottomRow) {
+      bottomRow = document.createElement("div"); bottomRow.id = "mo-bottom";
       var fl = document.createElement("a"); fl.id = "mo-forgot";
       fl.href = getForgotHref();
-      fl.textContent = getForgotLinkText();
-      row.appendChild(fl);
-      wrap.parentNode.insertBefore(row, wrap.nextSibling);
+      bottomRow.appendChild(fl);
+      var wrapEl = pwField.closest(".mo-pw-wrap") || pwField;
+      wrapEl.parentNode.insertBefore(bottomRow, wrapEl.nextSibling);
+    }
+    var forgotLinkEl = document.getElementById("mo-forgot");
+    if (forgotLinkEl) {
+      var origForgotLink = document.querySelector("a[href*='forgotpassword'], a[href*='resetpassword']");
+      var forgotLinkText = origForgotLink ? origForgotLink.textContent.trim() : "Forgot password";
+      forgotLinkEl.textContent = forgotLinkText;
     }
   }
 
@@ -372,13 +474,14 @@
       if (el) el.style.setProperty("display", "none", "important");
     });
 
-    /* Hide "Sign in with another account" links — check the link's OWN text node */
+    /* Hide "Sign in with another account" links only — check the link's OWN text, not children */
     document.querySelectorAll("a").forEach(function (a) {
       var txt = "";
       a.childNodes.forEach(function (n) { if (n.nodeType === 3) txt += n.nodeValue; });
       txt = txt.trim().toLowerCase();
       if (txt.indexOf("sign in with another") !== -1) {
         a.style.setProperty("display", "none", "important");
+        /* Only hide parent if it is a safe small container (.col-auto or .form-group) */
         var p = a.parentElement;
         if (p && (p.classList.contains("col-auto") || p.classList.contains("form-group"))) {
           p.style.setProperty("display", "none", "important");
@@ -393,7 +496,7 @@
 
     /* Wait for form to load */
     var emailInput = document.getElementById("emailAddress") || document.getElementById("username");
-    if (!emailInput) return;
+    if (!emailInput) return; // not ready yet
 
     /* ── CSS injection (once) ── */
     if (!document.getElementById("mo-fp-css")) {
@@ -518,100 +621,102 @@
     }
 
     /* ── JS force-hide (runs every call — beats React re-renders & inline styles) ── */
+    /* Logo row */
     document.querySelectorAll("div.w-100.d-flex").forEach(function (el) {
       if (el.classList.contains("justify-content-between") && el.classList.contains("align-items-start")) {
         el.style.setProperty("display", "none", "important");
       }
     });
+    /* h4 heading */
     document.querySelectorAll("h4").forEach(function (el) {
       el.style.setProperty("display", "none", "important");
     });
+    /* Subtitle paragraph */
     document.querySelectorAll("p.text-muted").forEach(function (el) {
       el.style.setProperty("display", "none", "important");
     });
+    /* Card heading block */
     var cardHeading = document.querySelector(".d-flex.flex-column.gap-2.mb-2");
     if (cardHeading) { cardHeading.style.setProperty("display", "none", "important"); }
+
+    /* separators and headers */
     document.querySelectorAll("#login-wrapper hr,#userform hr").forEach(function (el) {
       el.style.setProperty("display", "none", "important");
     });
 
-    /* ── DOM injection — only once ── */
-    if (document.getElementById("mo-forgot-done")) return;
-
+    /* Find the form element */
     var fpForm = emailInput.closest("form");
     if (!fpForm) return;
 
-    /*
-     * Title + subtitle — read from the platform's existing heading elements
-     * so the server-translated text is used.  The platform typically renders
-     * an h4 or .login-header with the page title; we promote that text into
-     * our styled #mo-fp-title span and inject a subtitle only if the platform
-     * provides one (e.g. a <p class="text-muted">).
-     */
-    if (!document.getElementById("mo-fp-title")) {
-      var platformTitle = document.querySelector(".login-header, h4.fw-medium, h4.my-4");
-      var titleText = platformTitle ? platformTitle.textContent.trim() : "";
-
-      var fpTitle = document.createElement("span");
+    /* Insert RESET PASSWORD title + subtitle before the form */
+    var fpTitle = document.getElementById("mo-fp-title");
+    if (!fpTitle) {
+      fpTitle = document.createElement("span");
       fpTitle.id = "mo-fp-title";
-      fpTitle.textContent = titleText;
       fpForm.parentNode.insertBefore(fpTitle, fpForm);
-
-      /* Subtitle — read from platform's subtitle paragraph if present */
-      var platformSubtitle = document.querySelector("p.text-muted");
-      var subtitleText = platformSubtitle ? platformSubtitle.textContent.trim() : "";
-
-      if (subtitleText) {
-        var fpSub = document.createElement("span");
-        fpSub.id = "mo-fp-subtitle";
-        fpSub.textContent = subtitleText;
-        fpForm.parentNode.insertBefore(fpSub, fpForm);
-      }
     }
+    var origH4 = document.querySelector("h4");
+    var fpTitleText = origH4 ? origH4.textContent.trim() : "RESET PASSWORD";
+    fpTitle.textContent = fpTitleText;
 
-    /*
-     * Email label — read from platform's own <label> so translated text is
-     * preserved.  We restyle it via #mo-fp-lbl and add the required star.
-     */
-    var origLabel = fpForm.querySelector("label[for='emailAddress']") ||
-                    fpForm.querySelector("label[for='username']") ||
-                    document.getElementById("mo-fp-lbl");
+    var fpSub = document.getElementById("mo-fp-subtitle");
+    if (!fpSub) {
+      fpSub = document.createElement("span");
+      fpSub.id = "mo-fp-subtitle";
+      fpForm.parentNode.insertBefore(fpSub, fpForm);
+    }
+    var origP = document.querySelector("p.text-muted");
+    var fpSubtitleText = origP ? origP.textContent.trim() : "We will send you an email with instructions on how to recover it";
+    fpSub.textContent = fpSubtitleText;
+
+    /* Replace/create label text */
+    var origLabel = fpForm.querySelector("label[for='emailAddress']") || fpForm.querySelector("label[for='username']") || document.getElementById("mo-fp-lbl");
     if (!origLabel) {
       origLabel = document.createElement("label");
       origLabel.setAttribute("for", emailInput.id);
       origLabel.id = "mo-fp-lbl";
-      origLabel.innerHTML = ' <span class="mo-req">*</span>';
       emailInput.parentNode.insertBefore(origLabel, emailInput);
     } else if (origLabel.id !== "mo-fp-lbl") {
-      var existingLblText = origLabel.textContent.trim();
       origLabel.id = "mo-fp-lbl"; origLabel.className = "";
-      origLabel.innerHTML = existingLblText + ' <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
     }
+    var origLabelText = origLabel ? origLabel.textContent.replace(/\*/g, "").trim() : "Email address";
+    origLabel.innerHTML = origLabelText + ' <span class="mo-req">*</span>';
 
-    /* Do NOT overwrite placeholder — keep platform's translated placeholder */
+    /* Fix input placeholder */
+    emailInput.setAttribute("placeholder", "email");
 
-    /* Helper text — this is custom copy not rendered by the platform, so it
-       must stay in this file.  If localization of this text is needed in the
-       future, it is the one place to add a translation map. */
-    if (!document.getElementById("mo-fp-helper")) {
+    /* Insert helper text after the input wrapper */
+    var helper = document.getElementById("mo-fp-helper");
+    if (!helper) {
       var inputWrapper = emailInput.closest(".mb-3") || emailInput.closest(".username-custom") || emailInput.closest(".row");
       if (inputWrapper) {
-        var helper = document.createElement("p");
+        helper = document.createElement("p");
         helper.id = "mo-fp-helper";
-        helper.innerHTML =
-          "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Can\u2019t figure it out?<br>" +
-          '<a href="mailto:support@example.com">Contact customer service</a>';
         inputWrapper.parentNode.insertBefore(helper, inputWrapper.nextSibling);
       }
     }
+    if (helper) {
+      var origHelpDiv = document.querySelector(".small.text-muted") || document.querySelector("p.text-muted.small");
+      var helpText = origHelpDiv ? origHelpDiv.innerHTML : "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Can’t figure it out?<br><a href=\"mailto:support@example.com\">Contact customer service</a>";
+      helper.innerHTML = helpText;
+    }
 
-    /* Button text — keep platform's translated text; do not overwrite */
-    /* (no assignment to fpBtn.innerHTML here) */
+    /* Change button text to NEXT → */
+    var fpBtn = fpForm.querySelector("button") || fpForm.querySelector("input[type='submit']");
+    if (fpBtn) {
+      var isRtl = isRtlLocale(getLocale());
+      var origBtnText = (fpBtn.value || fpBtn.textContent || "NEXT").trim();
+      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
+      var arrowSpan = isRtl ? '<span style="margin-right: 6px;">&larr;</span>' : '<span style="margin-left: 6px;">&rarr;</span>';
+      fpBtn.innerHTML = origBtnText + ' ' + arrowSpan;
+    }
 
     /* Mark as done */
-    var done = document.createElement("span");
-    done.id = "mo-forgot-done"; done.style.display = "none";
-    document.body.appendChild(done);
+    if (!document.getElementById("mo-forgot-done")) {
+      var done = document.createElement("span");
+      done.id = "mo-forgot-done"; done.style.display = "none";
+      document.body.appendChild(done);
+    }
   }
 
   /* ── OTP VERIFY PAGE (/moas/idp/validatenextfactor) ── */
@@ -621,6 +726,7 @@
     /* CSS — inject once */
     if (!document.getElementById("mo-otp-css")) {
       var otpCss =
+        /* Page: remove grey overlay, set brand bg */
         "body{background:#eef1f7!important;overflow:auto!important;" +
         "padding-right:0!important;font-family:'Figtree',sans-serif!important;}" +
         ".modal-backdrop{display:none!important;}" +
@@ -683,50 +789,63 @@
       document.head.appendChild(otpSt);
     }
 
-    /* DOM changes — only once */
-    if (document.getElementById("mo-otp-done")) return;
     var otpInput = document.getElementById("otpToken");
     if (!otpInput) return;
 
-    /*
-     * OTP page title — read from the platform's .modal-title so the
-     * translated text is used instead of hardcoding English.
-     */
+    /* VERIFY YOUR IDENTITY title */
     var modalHeader = document.getElementById("modal-header-main");
-    if (modalHeader && !document.getElementById("mo-otp-title")) {
-      var platformModalTitle = modalHeader.querySelector(".modal-title");
-      var otpTitleText = platformModalTitle ? platformModalTitle.textContent.trim() : "";
-      var otpTitle = document.createElement("span");
+    var otpTitle = document.getElementById("mo-otp-title");
+    if (modalHeader && !otpTitle) {
+      otpTitle = document.createElement("span");
       otpTitle.id = "mo-otp-title";
-      otpTitle.textContent = otpTitleText;
       modalHeader.insertBefore(otpTitle, modalHeader.firstChild);
     }
-
-    /*
-     * OTP label — read from the platform's existing label for #otpToken.
-     * Falls back to an empty label (styled via CSS) if none exists.
-     */
-    if (!document.getElementById("mo-otp-lbl")) {
-      var platformOtpLbl = document.querySelector("label[for='otpToken']");
-      var otpLblText = platformOtpLbl ? platformOtpLbl.textContent.trim() : "";
-      var otpLbl = document.createElement("label");
-      otpLbl.id = "mo-otp-lbl";
-      otpLbl.setAttribute("for", "otpToken");
-      otpLbl.innerHTML = otpLblText + ' <span class="mo-req">*</span>';
-      otpInput.parentNode.insertBefore(otpLbl, otpInput);
-      if (platformOtpLbl && platformOtpLbl !== otpLbl) {
-        platformOtpLbl.style.display = "none";
-      }
+    if (otpTitle) {
+      var origOtpTitle = document.querySelector(".modal-title");
+      var otpTitleText = origOtpTitle ? origOtpTitle.textContent.trim() : "VERIFY YOUR IDENTITY";
+      otpTitle.textContent = otpTitleText;
     }
 
-    /* Do NOT overwrite placeholder — keep platform's translated placeholder */
+    /* Label above OTP input */
+    var otpLbl = document.getElementById("mo-otp-lbl");
+    if (!otpLbl) {
+      otpLbl = document.createElement("label");
+      otpLbl.id = "mo-otp-lbl";
+      otpLbl.setAttribute("for", "otpToken");
+      otpInput.parentNode.insertBefore(otpLbl, otpInput);
+    }
+    var origOtpLbl = document.querySelector("label[for='otpToken']");
+    var otpLblText = origOtpLbl ? origOtpLbl.textContent.replace(/\*/g, "").trim() : "Enter OTP here";
+    otpLbl.innerHTML = otpLblText + ' <span class="mo-req">*</span>';
 
-    /* Verify and Cancel buttons — keep platform's translated text unchanged */
+    /* Placeholder */
+    var origPlaceholder = otpInput.getAttribute("placeholder") || "OTP number";
+    otpInput.setAttribute("placeholder", origPlaceholder);
+
+    /* Verify button */
+    var verifyBtn = document.getElementById("validate");
+    if (verifyBtn) {
+      var isRtl = isRtlLocale(getLocale());
+      var arrowStr = isRtl ? " \u2190" : " \u2192";
+      var origBtnText = (verifyBtn.value || verifyBtn.textContent || "VERIFY").trim();
+      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
+      verifyBtn.value = origBtnText + arrowStr;
+    }
+
+    /* Cancel button */
+    var cancelBtn = document.querySelector(".btn-cancel");
+    if (cancelBtn) {
+      var origCancelBtn = document.querySelector(".btn-cancel");
+      var cancelBtnText = origCancelBtn ? origCancelBtn.textContent.trim() : "CANCEL";
+      cancelBtn.textContent = cancelBtnText;
+    }
 
     /* Mark done */
-    var otpDone = document.createElement("span");
-    otpDone.id = "mo-otp-done"; otpDone.style.display = "none";
-    document.body.appendChild(otpDone);
+    if (!document.getElementById("mo-otp-done")) {
+      var otpDone = document.createElement("span");
+      otpDone.id = "mo-otp-done"; otpDone.style.display = "none";
+      document.body.appendChild(otpDone);
+    }
   }
 
   /* ── CHANGE PASSWORD PAGE (/moas/idp/changepassword) ── */
@@ -736,9 +855,11 @@
     /* CSS — inject once */
     if (!document.getElementById("mo-cp-css")) {
       var cpCss =
+        /* Page bg */
         "body,#login-body{background:#eef1f7!important;font-family:'Figtree',sans-serif!important;min-height:100vh!important;}" +
         "#login-header{display:none!important;}" +
 
+        /* Card wrapper */
         "#login-wrapper{" +
         "background:#fff!important;border:1px solid #e0e7ef!important;" +
         "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
@@ -746,6 +867,7 @@
         "margin:40px auto!important;box-sizing:border-box!important;" +
         "}" +
 
+        /* Title styling */
         "#login-wrapper .login-header{" +
         "display:flex!important;justify-content:space-between!important;align-items:center!important;" +
         "font-family:'Figtree',sans-serif!important;font-size:24px!important;" +
@@ -754,14 +876,17 @@
         "border:none!important;padding:0!important;" +
         "}" +
 
+        /* Hide line separators */
         "#login-wrapper hr{display:none!important;}" +
 
+        /* Form stack */
         "#passwordform .row,#userform .row{margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;}" +
         "#passwordform .col-md-5,#passwordform .col-md-8,#passwordform .offset-md-1,#passwordform .offset-md-2," +
         "#userform .col-xs-5,#userform .col-xs-offset-1,#userform .col-xs-10,#userform .col-xs-offset-2{" +
         "width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;text-align:left!important;" +
         "}" +
 
+        /* Password requirements alert box customization */
         ".password-padding{padding:0!important;margin:10px 0 20px 0!important;width:100%!important;}" +
         ".password-padding .alert-info{" +
         "background:transparent!important;border:none!important;" +
@@ -795,12 +920,14 @@
         "color:#82829c!important;font-weight:normal!important;font-size:14px!important;" +
         "}" +
 
+        /* Style label/text above inputs */
         "#passwordform p.text-left,#userform span.align-items-left,#userform span.d-flex{" +
         "display:block!important;color:#3c515d!important;font-size:14px!important;" +
         "font-weight:700!important;font-family:'Figtree',sans-serif!important;" +
         "text-align:left!important;margin:0 0 6px 0!important;" +
         "}" +
 
+        /* Style inputs */
         "#newPassword,#confirmPassword,#password,#userform input[type='password']{" +
         "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
         "padding:0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
@@ -812,6 +939,7 @@
         "border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;" +
         "}" +
 
+        /* Submit button styling */
         "#validate,#submit{" +
         "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
         "gap:8px!important;min-height:40px!important;padding:8px 24px!important;" +
@@ -823,6 +951,7 @@
         "}" +
         "#validate:hover,#submit:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
 
+        /* Hide Go Back to Login link */
         "#passwordform a.btn-link,#back-link{display:none!important;}";
 
       var cpSt = document.createElement("style");
@@ -836,36 +965,33 @@
     var newPasswordInput = document.getElementById("newPassword") || fpForm.querySelector("input[name='password']");
     var confirmPasswordInput = document.getElementById("confirmPassword") || fpForm.querySelector("input[name='confirmPassword']");
 
-    /*
-     * Page title — keep the platform's .login-header text as-is (it is
-     * already translated by the server).  We only append the close ✕ button
-     * as a structural element; no text overwrite.
-     */
+    /* Update title to LOGIN DETAILS with close x button */
     var h3 = document.querySelector(".login-header");
-    if (h3 && !document.getElementById("mo-cp-close")) {
-      /* Do NOT overwrite h3.textContent — preserve the platform's translation */
-      var closeBtn = document.createElement("a");
-      closeBtn.id = "mo-cp-close";
-      closeBtn.href = "login";
-      closeBtn.innerHTML = "&times;";
-      closeBtn.style.color = "#a0aab6";
-      closeBtn.style.textDecoration = "none";
-      closeBtn.style.fontSize = "24px";
-      closeBtn.style.fontWeight = "400";
-      closeBtn.style.cursor = "pointer";
-      closeBtn.style.lineHeight = "1";
+    if (h3) {
+      var closeBtn = document.getElementById("mo-cp-close");
+      if (!closeBtn) {
+        closeBtn = document.createElement("a");
+        closeBtn.id = "mo-cp-close";
+        closeBtn.href = "login";
+        closeBtn.innerHTML = "&times;";
+        closeBtn.style.color = "#a0aab6";
+        closeBtn.style.textDecoration = "none";
+        closeBtn.style.fontSize = "24px";
+        closeBtn.style.fontWeight = "400";
+        closeBtn.style.cursor = "pointer";
+        closeBtn.style.lineHeight = "1";
+      }
+      var origH3 = document.querySelector(".login-header");
+      var h3Text = origH3 ? origH3.textContent.replace(/×/g, "").trim() : "LOGIN DETAILS";
+      h3.textContent = h3Text + " ";
       h3.appendChild(closeBtn);
     }
 
-    /*
-     * Password field labels — add the required-star span only; do NOT
-     * replace the label text so the platform's translation is preserved.
-     */
+    /* Add * to labels */
     var labelSelector = "#passwordform p.text-left, #userform span.align-items-left, #userform span.d-flex";
     document.querySelectorAll(labelSelector).forEach(function (p) {
-      if (!p.querySelector(".mo-req")) {
-        p.innerHTML = p.textContent.trim() + ' <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
-      }
+      if (p.querySelector(".mo-req")) return; // already added
+      p.innerHTML = p.innerHTML.trim() + ' <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
     });
 
     /* Deduplicate requirements list if Xecurify script duplicated them */
@@ -883,33 +1009,37 @@
       });
     }
 
-    /* Move requirements block below new password input */
+    /* Move requirements block below new password input (above confirm password input) */
     var newPasswordCol = newPasswordInput ? newPasswordInput.closest("div") : null;
     var requirementsBlock = document.querySelector(".password-padding");
     if (newPasswordCol && requirementsBlock && requirementsBlock.previousSibling !== newPasswordCol) {
       newPasswordCol.parentNode.insertBefore(requirementsBlock, newPasswordCol.nextSibling);
     }
 
-    /*
-     * Strength meter — this widget is entirely custom (not rendered by the
-     * platform), so its labels are the one place where we keep injected
-     * strings.  If Arabic support for these labels is needed later, add a
-     * small translation map here only.
-     */
-    if (requirementsBlock && !document.getElementById("mo-strength-container")) {
-      var strengthContainer = document.createElement("div");
+    /* Append strength meter */
+    var strengthContainer = document.getElementById("mo-strength-container");
+    if (requirementsBlock && !strengthContainer) {
+      strengthContainer = document.createElement("div");
       strengthContainer.id = "mo-strength-container";
       strengthContainer.style.width = "100%";
       strengthContainer.style.boxSizing = "border-box";
       strengthContainer.innerHTML =
         '<div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 6px 0; width:100%;">' +
-        '<span id="mo-strength-label" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#3c515d;">Password strength</span>' +
-        '<span id="mo-strength-value" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#a0aab6;">Weak</span>' +
+        '<span id="mo-strength-label" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#3c515d;"></span>' +
+        '<span id="mo-strength-value" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#a0aab6;"></span>' +
         '</div>' +
         '<div id="mo-strength-bar-wrap" style="height:4px; background:#e0e7ef; border-radius:2px; overflow:hidden; width:100%;">' +
         '<div id="mo-strength-bar-fill" style="height:100%; width:0%; background:#e0e7ef; transition: width 0.3s ease, background-color 0.3s ease;"></div>' +
         '</div>';
       requirementsBlock.appendChild(strengthContainer);
+    }
+    if (strengthContainer) {
+      var lblEl = document.getElementById("mo-strength-label");
+      var valEl = document.getElementById("mo-strength-value");
+      if (lblEl) lblEl.textContent = getTranslation("passwordStrength");
+      if (valEl && (!newPasswordInput || newPasswordInput.value === "")) {
+        valEl.textContent = getTranslation("strengthWeak");
+      }
     }
 
     /* Dynamic Validation Function */
@@ -967,7 +1097,7 @@
       var strengthFill = document.getElementById("mo-strength-bar-fill");
       if (strengthValue && strengthFill) {
         if (val.length === 0) {
-          strengthValue.textContent = "Weak";
+          strengthValue.textContent = getTranslation("strengthWeak");
           strengthValue.style.color = "#a0aab6";
           strengthFill.style.width = "0%";
           strengthFill.style.backgroundColor = "#e0e7ef";
@@ -976,19 +1106,19 @@
           strengthFill.style.width = pct + "%";
 
           if (pct < 40) {
-            strengthValue.textContent = "Weak";
+            strengthValue.textContent = getTranslation("strengthWeak");
             strengthValue.style.color = "#e02020";
             strengthFill.style.backgroundColor = "#e02020";
           } else if (pct < 70) {
-            strengthValue.textContent = "Medium";
+            strengthValue.textContent = getTranslation("strengthMedium");
             strengthValue.style.color = "#ff9800";
             strengthFill.style.backgroundColor = "#ff9800";
           } else if (pct < 100) {
-            strengthValue.textContent = "Strong";
+            strengthValue.textContent = getTranslation("strengthStrong");
             strengthValue.style.color = "#0A55D7";
             strengthFill.style.backgroundColor = "#0A55D7";
           } else {
-            strengthValue.textContent = "Sufficient";
+            strengthValue.textContent = getTranslation("strengthSufficient");
             strengthValue.style.color = "#2e7d32";
             strengthFill.style.backgroundColor = "#2e7d32";
           }
@@ -1003,9 +1133,7 @@
       updatePasswordRequirementsAndStrength();
     }
 
-    /* Submit button — keep platform's translated text unchanged */
-
-    /* Disable native HTML5 validation bubbles */
+    /* Disable native HTML5 validation bubbles/hovers */
     var form = document.getElementById("passwordform") || document.getElementById("userform");
     if (form) {
       form.setAttribute("novalidate", "true");
@@ -1017,7 +1145,7 @@
       confirmPasswordInput.removeAttribute("title");
     }
 
-    /* Shift the error display container (#pwd_strength) below confirm input */
+    /* Shift the error display container (#pwd_strength) below the confirm password input */
     var pwdStrengthDiv = document.getElementById("pwd_strength");
     if (confirmPasswordInput && pwdStrengthDiv && pwdStrengthDiv.parentNode !== confirmPasswordInput.parentNode) {
       confirmPasswordInput.parentNode.appendChild(pwdStrengthDiv);
@@ -1030,12 +1158,7 @@
       pwdStrengthDiv.style.display = "block";
     }
 
-    /*
-     * Custom submit validation — error messages are injected by this script
-     * (the platform does not render them).  These are the only strings that
-     * genuinely cannot come from the platform.  Add a translation map here
-     * if Arabic error messages are required in the future.
-     */
+    /* Bind custom validation on submit to show neat errors instead of bubbles */
     if (form && !form.dataset.moValidationBound) {
       form.dataset.moValidationBound = "true";
       form.addEventListener("submit", function (e) {
@@ -1046,7 +1169,7 @@
         if (!val) {
           e.preventDefault();
           if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>New password is required.</font>";
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>" + getTranslation("newPasswordRequired") + "</font>";
           }
           if (newPasswordInput) newPasswordInput.focus();
           return;
@@ -1056,7 +1179,7 @@
         if (invalidItems.length > 0) {
           e.preventDefault();
           if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>Please satisfy all password requirements.</font>";
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>" + getTranslation("satisfyRequirements") + "</font>";
           }
           if (newPasswordInput) newPasswordInput.focus();
           return;
@@ -1065,7 +1188,7 @@
         if (val !== confirmVal) {
           e.preventDefault();
           if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>The two passwords must match.</font>";
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>" + getTranslation("passwordsMustMatch") + "</font>";
           }
           if (confirmPasswordInput) confirmPasswordInput.focus();
           return;
@@ -1094,6 +1217,7 @@
       applyPasswordStep();
       forceHide();
 
+      /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
       document.querySelectorAll("a[href*='forgotpassword'],a[href*='resetpassword'],a[href*='businessfreetrial']").forEach(function (a) {
         if (a.id === "mo-forgot") return;
         var c = a.closest(".col-auto");
