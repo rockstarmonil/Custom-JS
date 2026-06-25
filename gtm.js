@@ -6,7 +6,18 @@
     var params = new URLSearchParams(window.location.search);
     var urlLocale = params.get("request_locale");
 
+    function getCookie(name) {
+      try {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length === 2) return parts.pop().split(";").shift();
+      } catch (e) {}
+      return null;
+    }
+
     function getStoredLocale() {
+      var cookieLocale = getCookie("request_locale");
+      if (cookieLocale) return cookieLocale.toLowerCase();
       try {
         var sessionLocale = sessionStorage.getItem("request_locale");
         if (sessionLocale) return sessionLocale.toLowerCase();
@@ -92,12 +103,16 @@
       }
     }
     try {
-      var sessionLocale = sessionStorage.getItem("request_locale");
-      if (sessionLocale) return sessionLocale.toLowerCase();
+      var value = "; " + document.cookie;
+      var parts = value.split("; request_locale=");
+      if (parts.length === 2) {
+        var cookieVal = parts.pop().split(";").shift();
+        if (cookieVal) return cookieVal.toLowerCase();
+      }
     } catch (e) {}
     try {
-      var localLocale = localStorage.getItem("request_locale");
-      if (localLocale) return localLocale.toLowerCase();
+      var sessionLocale = sessionStorage.getItem("request_locale");
+      if (sessionLocale) return sessionLocale.toLowerCase();
     } catch (e) {}
     try {
       var navLang = navigator.language || navigator.userLanguage || "en";
