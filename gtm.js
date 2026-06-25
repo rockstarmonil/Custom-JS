@@ -14,19 +14,7 @@
       return null;
     }
 
-    function saveLocale(locale) {
-      locale = locale.toLowerCase();
-      try {
-        sessionStorage.setItem("request_locale", locale);
-      } catch (e) {}
-      try {
-        localStorage.setItem("request_locale", locale);
-      } catch (e) {}
-    }
-
-    if (urlLocale) {
-      saveLocale(urlLocale);
-    } else {
+    if (!urlLocale) {
       var stored = getStoredLocale();
       if (stored) {
         params.set("request_locale", stored);
@@ -96,6 +84,13 @@
     if (urlLocale) {
       return urlLocale.toLowerCase();
     }
+    var htmlLang = document.documentElement.lang || document.documentElement.getAttribute("lang");
+    if (htmlLang) {
+      var parsedLang = htmlLang.substring(0, 2).toLowerCase();
+      if (parsedLang === "ar" || parsedLang === "en") {
+        return parsedLang;
+      }
+    }
     try {
       var sessionLocale = sessionStorage.getItem("request_locale");
       if (sessionLocale) return sessionLocale.toLowerCase();
@@ -144,6 +139,20 @@
     var locale = getLocale();
     var dict = translations[locale] || translations["en"];
     return dict[key] || translations["en"][key] || "";
+  }
+
+  function setButtonTextWithArrow(btn, defaultText) {
+    if (!btn) return;
+    var isRtl = isRtlLocale(getLocale());
+    var origBtnText = (btn.value || btn.textContent || defaultText).trim();
+    origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
+    if (btn.tagName.toLowerCase() === "input") {
+      var arrowStr = isRtl ? " \u2190" : " \u2192";
+      btn.value = origBtnText + arrowStr;
+    } else {
+      var arrowHtml = isRtl ? '<span style="margin-right: 6px;">&larr;</span>' : '<span style="margin-left: 6px;">&rarr;</span>';
+      btn.innerHTML = origBtnText + ' ' + arrowHtml;
+    }
   }
 
   /* ── INJECT FONT AND CSS ── */
@@ -270,7 +279,26 @@
         "[dir='rtl'] .mo-eye{right:auto!important;left:10px!important;}" +
         "[dir='rtl'] #plaintextPassword,[dir='rtl'] .mo-styled-input{padding-right:12px!important;padding-left:42px!important;}" +
         "[dir='rtl'] #mo-bottom{justify-content:flex-start!important;}" +
-        "[dir='rtl'] #loginbutton{flex-direction:row-reverse!important;}";
+        "[dir='rtl'] #loginbutton{flex-direction:row-reverse!important;}" +
+        /* Forgot Password Page RTL Overrides */
+        "[dir='rtl'] #mo-fp-title{text-align:right!important;}" +
+        "[dir='rtl'] #mo-fp-lbl{text-align:right!important;}" +
+        "[dir='rtl'] #mo-fp-helper{text-align:right!important;}" +
+        "[dir='rtl'] #userform .row div:has(.custom-button), [dir='rtl'] .d-grid.mb-3{text-align:right!important;}" +
+        /* OTP Page RTL Overrides */
+        "[dir='rtl'] #mo-otp-title{text-align:right!important;}" +
+        "[dir='rtl'] #mo-otp-lbl{text-align:right!important;}" +
+        "[dir='rtl'] #modal-header-main{text-align:right!important;}" +
+        "[dir='rtl'] #modal-footer{justify-content:flex-end!important;}" +
+        "[dir='rtl'] #success-alert-message{text-align:right!important;border-left:none!important;border-right:4px solid #2e7d32!important;}" +
+        /* Change Password Page RTL Overrides */
+        "[dir='rtl'] #login-wrapper .login-header{flex-direction:row-reverse!important;text-align:right!important;}" +
+        "[dir='rtl'] #passwordform p.text-left, [dir='rtl'] #userform span.align-items-left, [dir='rtl'] #userform span.d-flex{text-align:right!important;}" +
+        "[dir='rtl'] #listcontent li{padding-left:0!important;padding-right:20px!important;text-align:right!important;}" +
+        "[dir='rtl'] #listcontent li::before{right:0!important;left:auto!important;}" +
+        "[dir='rtl'] #passwordform .row, [dir='rtl'] #userform .row{align-items:flex-end!important;}" +
+        "[dir='rtl'] #validate, [dir='rtl'] #submit{margin:10px 0 10px auto!important;align-self:flex-end!important;}" +
+        "[dir='rtl'] #pwd_strength{text-align:right!important;}";
 
       var st = document.createElement("style");
       st.id = "mo-css"; st.textContent = css;
@@ -286,6 +314,14 @@
 
   /* ── STEP 1: Email page UI ── */
   function applyEmailStep() {
+    var pwField = document.getElementById("plaintextPassword");
+    // If password field is visible, we are NOT on the email step!
+    if (pwField && pwField.style.display !== "none" && !pwField.classList.contains("d-none")) {
+      var emailFg = document.getElementById("mo-email-fg");
+      if (emailFg) emailFg.style.setProperty("display", "none", "important");
+      return;
+    }
+
     var wrapper = document.getElementById("login-wrapper");
     if (!wrapper) return;
 
@@ -314,6 +350,20 @@
       var inp = document.getElementById("username");
       if (inp) inp.setAttribute("placeholder", "email");
     }
+
+    // Ensure step-specific elements are visibility-synchronized
+    if (fg) {
+      fg.style.setProperty("display", "block", "important");
+    }
+    var userFg = document.getElementById("mo-user-fg");
+    if (userFg) userFg.style.setProperty("display", "none", "important");
+    var pwLbl = document.getElementById("mo-pw-lbl");
+    if (pwLbl) pwLbl.style.setProperty("display", "none", "important");
+    var wrap = document.querySelector(".mo-pw-wrap");
+    if (wrap) wrap.style.setProperty("display", "none", "important");
+    var bottomRow = document.getElementById("mo-bottom");
+    if (bottomRow) bottomRow.style.setProperty("display", "none", "important");
+
     var emailLbl = document.getElementById("mo-email-lbl");
     if (emailLbl) {
       var origEmailLbl = document.querySelector("label[for='username']:not(#mo-email-lbl):not(#mo-user-lbl)");
@@ -326,14 +376,7 @@
 
     /* Button label */
     var btn = document.getElementById("loginbutton");
-    if (btn) {
-      var isRtl = isRtlLocale(getLocale());
-      var arrowStr = isRtl ? " \u2190" : " \u2192";
-      var origBtnText = btn.value || btn.textContent || "LOG IN";
-      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
-      btn.value = origBtnText + arrowStr;
-      btn.dataset.mo = "1";
-    }
+    setButtonTextWithArrow(btn, "LOG IN");
 
     /* Hide hr and br */
     wrapper.querySelectorAll("hr,br").forEach(function (el) {
@@ -345,7 +388,17 @@
   function applyPasswordStep() {
     var pwField = document.getElementById("plaintextPassword");
     if (!pwField) return;                          // not the password step yet
-    if (pwField.style.display === "none" || pwField.classList.contains("d-none")) return;
+    if (pwField.style.display === "none" || pwField.classList.contains("d-none")) {
+      var userFg = document.getElementById("mo-user-fg");
+      if (userFg) userFg.style.setProperty("display", "none", "important");
+      var pwLbl = document.getElementById("mo-pw-lbl");
+      if (pwLbl) pwLbl.style.setProperty("display", "none", "important");
+      var wrap = document.querySelector(".mo-pw-wrap");
+      if (wrap) wrap.style.setProperty("display", "none", "important");
+      var bottomRow = document.getElementById("mo-bottom");
+      if (bottomRow) bottomRow.style.setProperty("display", "none", "important");
+      return;
+    }
 
     /* Force-hide elements that jQuery's showAdminPassword() re-shows */
     var dynUser = document.getElementById("dynamicUserName");
@@ -375,13 +428,7 @@
 
     /* Button label */
     var btn = document.getElementById("loginbutton");
-    if (btn) {
-      var isRtl = isRtlLocale(getLocale());
-      var arrowStr = isRtl ? " \u2190" : " \u2192";
-      var origBtnText = btn.value || btn.textContent || "LOG IN";
-      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
-      btn.value = origBtnText + arrowStr;
-    }
+    setButtonTextWithArrow(btn, "LOG IN");
 
     /* Password label above #plaintextPassword */
     var pwLbl = document.getElementById("mo-pw-lbl");
@@ -391,6 +438,7 @@
       pwLbl.setAttribute("for", "plaintextPassword");
       pwField.parentNode.insertBefore(pwLbl, pwField);
     }
+    pwLbl.style.setProperty("display", "block", "important");
     var origPwLbl = document.querySelector("label[for='plaintextPassword']:not(#mo-pw-lbl)");
     if (origPwLbl) {
       origPwLbl.style.setProperty("display", "none", "important");
@@ -398,20 +446,27 @@
     var pwLblText = (origPwLbl && origPwLbl.textContent.trim()) ? origPwLbl.textContent.replace(/\*/g, "").trim() : "Password";
     pwLbl.innerHTML = pwLblText + ' <span class="mo-req">*</span>';
 
-    /* Show read-only username above password field */
-    if (!document.getElementById("mo-user-display")) {
-      var usernameVal = "";
-      var unInp = document.getElementById("username");
-      if (unInp && unInp.value) usernameVal = unInp.value;
-      if (!usernameVal && dynUser) usernameVal = dynUser.textContent.trim();
-      if (usernameVal) {
-        var userFg = document.createElement("div"); userFg.className = "mo-fg"; userFg.id = "mo-user-fg";
-        var userLbl = document.createElement("label"); userLbl.className = "mo-lbl"; userLbl.id = "mo-user-lbl";
-        var userBox = document.createElement("div"); userBox.id = "mo-user-display";
-        userBox.className = "mo-user-display";
+    /* Show/Update read-only username above password field */
+    var usernameVal = "";
+    var unInp = document.getElementById("username");
+    if (unInp && unInp.value) usernameVal = unInp.value;
+    if (!usernameVal && dynUser) usernameVal = dynUser.textContent.trim();
+
+    var userFg = document.getElementById("mo-user-fg");
+    if (!userFg && usernameVal) {
+      userFg = document.createElement("div"); userFg.className = "mo-fg"; userFg.id = "mo-user-fg";
+      var userLbl = document.createElement("label"); userLbl.className = "mo-lbl"; userLbl.id = "mo-user-lbl";
+      var userBox = document.createElement("div"); userBox.id = "mo-user-display";
+      userBox.className = "mo-user-display";
+      userBox.textContent = usernameVal;
+      userFg.appendChild(userLbl); userFg.appendChild(userBox);
+      pwLbl.parentNode.insertBefore(userFg, pwLbl);
+    }
+    if (userFg) {
+      userFg.style.setProperty("display", "block", "important");
+      var userBox = document.getElementById("mo-user-display");
+      if (userBox && usernameVal) {
         userBox.textContent = usernameVal;
-        userFg.appendChild(userLbl); userFg.appendChild(userBox);
-        pwLbl.parentNode.insertBefore(userFg, pwLbl);
       }
     }
     var userLblEl = document.getElementById("mo-user-lbl");
@@ -442,6 +497,10 @@
       });
       wrap.appendChild(eyeBtn);
     }
+    var wrapEl = pwField.closest(".mo-pw-wrap");
+    if (wrapEl) {
+      wrapEl.style.setProperty("display", "flex", "important");
+    }
 
     /* Forgot password link only (no Remember me checkbox) */
     var bottomRow = document.getElementById("mo-bottom");
@@ -450,9 +509,10 @@
       var fl = document.createElement("a"); fl.id = "mo-forgot";
       fl.href = getForgotHref();
       bottomRow.appendChild(fl);
-      var wrapEl = pwField.closest(".mo-pw-wrap") || pwField;
-      wrapEl.parentNode.insertBefore(bottomRow, wrapEl.nextSibling);
+      var wrapForForgot = wrapEl || pwField;
+      wrapForForgot.parentNode.insertBefore(bottomRow, wrapForForgot.nextSibling);
     }
+    bottomRow.style.setProperty("display", "flex", "important");
     var forgotLinkEl = document.getElementById("mo-forgot");
     if (forgotLinkEl) {
       var origForgotLink = document.querySelector("a[href*='forgotpassword'], a[href*='resetpassword']");
@@ -700,13 +760,7 @@
 
     /* Change button text to NEXT → */
     var fpBtn = fpForm.querySelector("button") || fpForm.querySelector("input[type='submit']");
-    if (fpBtn) {
-      var isRtl = isRtlLocale(getLocale());
-      var origBtnText = (fpBtn.value || fpBtn.textContent || "NEXT").trim();
-      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
-      var arrowSpan = isRtl ? '<span style="margin-right: 6px;">&larr;</span>' : '<span style="margin-left: 6px;">&rarr;</span>';
-      fpBtn.innerHTML = origBtnText + ' ' + arrowSpan;
-    }
+    setButtonTextWithArrow(fpBtn, "NEXT");
 
     /* Mark as done */
     if (!document.getElementById("mo-forgot-done")) {
@@ -824,13 +878,7 @@
 
     /* Verify button */
     var verifyBtn = document.getElementById("validate");
-    if (verifyBtn) {
-      var isRtl = isRtlLocale(getLocale());
-      var arrowStr = isRtl ? " \u2190" : " \u2192";
-      var origBtnText = (verifyBtn.value || verifyBtn.textContent || "VERIFY").trim();
-      origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
-      verifyBtn.value = origBtnText + arrowStr;
-    }
+    setButtonTextWithArrow(verifyBtn, "VERIFY");
 
     /* Cancel button */
     var cancelBtn = document.querySelector(".btn-cancel");
@@ -1055,29 +1103,39 @@
         var txt = li.textContent.trim().toLowerCase();
         var isValid = false;
 
-        if (txt.indexOf("minimum") !== -1 || txt.indexOf("characters") !== -1) {
-          var minMatch = txt.match(/minimum\s+(\d+)/) || txt.match(/(\d+)-(\d+)\s+characters/);
+        var isMin = txt.indexOf("minimum") !== -1 || txt.indexOf("characters") !== -1 || 
+                    txt.indexOf("أقل") !== -1 || txt.indexOf("أدنى") !== -1 || txt.indexOf("حرف") !== -1;
+        var isMax = txt.indexOf("maximum") !== -1 || txt.indexOf("أقصى") !== -1 || txt.indexOf("يزيد") !== -1;
+        var isUpper = txt.indexOf("uppercase") !== -1 || txt.indexOf("كبير") !== -1;
+        var isLower = txt.indexOf("lowercase") !== -1 || txt.indexOf("صغير") !== -1;
+        var isDigit = txt.indexOf("number") !== -1 || txt.indexOf("digit") !== -1 || 
+                      txt.indexOf("رقم") !== -1 || txt.indexOf("أرقام") !== -1 || txt.indexOf("عدد") !== -1;
+        var isSymbol = txt.indexOf("symbol") !== -1 || txt.indexOf("special") !== -1 || 
+                       txt.indexOf("رمز") !== -1 || txt.indexOf("رموز") !== -1;
+
+        if (isMin) {
+          var minMatch = txt.match(/minimum\s+(\d+)/) || txt.match(/(\d+)-(\d+)\s+characters/) || txt.match(/(\d+)/);
           if (minMatch) {
-            var minLen = parseInt(minMatch[1], 10);
+            var minLen = parseInt(minMatch[1] || minMatch[2], 10);
             if (val.length >= minLen) isValid = true;
           } else {
             if (val.length >= 6) isValid = true;
           }
-        } else if (txt.indexOf("maximum") !== -1) {
-          var maxMatch = txt.match(/maximum\s+(\d+)/);
+        } else if (isMax) {
+          var maxMatch = txt.match(/maximum\s+(\d+)/) || txt.match(/(\d+)/);
           if (maxMatch) {
-            var maxLen = parseInt(maxMatch[1], 10);
+            var maxLen = parseInt(maxMatch[1] || maxMatch[0], 10);
             if (val.length <= maxLen && val.length > 0) isValid = true;
           } else {
             if (val.length <= 20 && val.length > 0) isValid = true;
           }
-        } else if (txt.indexOf("uppercase") !== -1) {
+        } else if (isUpper) {
           if (/[A-Z]/.test(val)) isValid = true;
-        } else if (txt.indexOf("lowercase") !== -1) {
+        } else if (isLower) {
           if (/[a-z]/.test(val)) isValid = true;
-        } else if (txt.indexOf("number") !== -1 || txt.indexOf("digit") !== -1) {
+        } else if (isDigit) {
           if (/[0-9]/.test(val)) isValid = true;
-        } else if (txt.indexOf("symbol") !== -1 || txt.indexOf("special") !== -1 || txt.indexOf("allowed symbols") !== -1) {
+        } else if (isSymbol) {
           if (/[!@#\$%\^&\*\-_\.]/.test(val)) isValid = true;
         } else {
           if (val.length > 0) isValid = true;
