@@ -15,10 +15,6 @@
         var localLocale = localStorage.getItem("request_locale");
         if (localLocale) return localLocale.toLowerCase();
       } catch (e) {}
-      try {
-        var match = document.cookie.match(new RegExp('(^| )request_locale=([^;]+)'));
-        if (match) return match[2].toLowerCase();
-      } catch (e) {}
       return null;
     }
 
@@ -29,9 +25,6 @@
       } catch (e) {}
       try {
         localStorage.setItem("request_locale", locale);
-      } catch (e) {}
-      try {
-        document.cookie = "request_locale=" + locale + "; path=/; max-age=31536000";
       } catch (e) {}
     }
 
@@ -112,8 +105,8 @@
       if (sessionLocale) return sessionLocale.toLowerCase();
     } catch (e) {}
     try {
-      var match = document.cookie.match(new RegExp('(^| )request_locale=([^;]+)'));
-      if (match) return match[2].toLowerCase();
+      var localLocale = localStorage.getItem("request_locale");
+      if (localLocale) return localLocale.toLowerCase();
     } catch (e) {}
     try {
       var navLang = navigator.language || navigator.userLanguage || "en";
