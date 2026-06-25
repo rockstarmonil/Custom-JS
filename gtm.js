@@ -1,44 +1,6 @@
 (function () {
   "use strict";
 
-  /* ── LOCALE & REDIRECT SYNC ── */
-  function syncLocaleParam() {
-    var params = new URLSearchParams(window.location.search);
-    var urlLocale = params.get("request_locale");
-
-    function getCookie(name) {
-      try {
-        var value = "; " + document.cookie;
-        var parts = value.split("; " + name + "=");
-        if (parts.length === 2) return parts.pop().split(";").shift();
-      } catch (e) {}
-      return null;
-    }
-
-    function getStoredLocale() {
-      var cookieLocale = getCookie("request_locale");
-      if (cookieLocale) return cookieLocale.toLowerCase();
-      try {
-        var sessionLocale = sessionStorage.getItem("request_locale");
-        if (sessionLocale) return sessionLocale.toLowerCase();
-      } catch (e) {}
-      return null;
-    }
-
-    if (!urlLocale) {
-      var stored = getStoredLocale();
-      if (stored) {
-        params.set("request_locale", stored);
-        var newSearch = params.toString();
-        var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?" + newSearch + window.location.hash;
-        window.location.replace(newUrl);
-      }
-    }
-  }
-
-  // Sync redirect check runs immediately
-  syncLocaleParam();
-
   /* ── PAGE DETECTION HELPERS ── */
   function checkIsLogin() {
     var path = window.location.pathname.toLowerCase();
@@ -50,9 +12,9 @@
 
   function checkIsForgot() {
     var path = window.location.pathname.toLowerCase();
-    if (path.indexOf("moas/idp/forgotpassword") !== -1 ||
-      path.indexOf("moas/idp/resetpassword") !== -1 ||
-      path.indexOf("moas/idp/resetuserpassword") !== -1) {
+    if (path.indexOf("moas/idp/forgotpassword") !== -1 || 
+        path.indexOf("moas/idp/resetpassword") !== -1 || 
+        path.indexOf("moas/idp/resetuserpassword") !== -1) {
       return true;
     }
     var userform = document.getElementById("userform");
@@ -75,8 +37,8 @@
 
   function checkIsChangePass() {
     var path = window.location.pathname.toLowerCase();
-    if (path.indexOf("moas/idp/changepassword") !== -1 ||
-      path.indexOf("moas/idp/changeuserpassword") !== -1) {
+    if (path.indexOf("moas/idp/changepassword") !== -1 || 
+        path.indexOf("moas/idp/changeuserpassword") !== -1) {
       return true;
     }
     if (document.getElementById("passwordform")) {
@@ -89,237 +51,122 @@
     return false;
   }
 
-  function getLocale() {
-    var params = new URLSearchParams(window.location.search);
-    var urlLocale = params.get("request_locale");
-    if (urlLocale) {
-      return urlLocale.toLowerCase();
-    }
-    var htmlLang = document.documentElement.lang || document.documentElement.getAttribute("lang");
-    if (htmlLang) {
-      var parsedLang = htmlLang.substring(0, 2).toLowerCase();
-      if (parsedLang === "ar" || parsedLang === "en") {
-        return parsedLang;
-      }
-    }
-    try {
-      var value = "; " + document.cookie;
-      var parts = value.split("; request_locale=");
-      if (parts.length === 2) {
-        var cookieVal = parts.pop().split(";").shift();
-        if (cookieVal) return cookieVal.toLowerCase();
-      }
-    } catch (e) {}
-    try {
-      var sessionLocale = sessionStorage.getItem("request_locale");
-      if (sessionLocale) return sessionLocale.toLowerCase();
-    } catch (e) {}
-    try {
-      var navLang = navigator.language || navigator.userLanguage || "en";
-      return navLang.substring(0, 2).toLowerCase();
-    } catch (e) {}
-    return "en";
-  }
-
-  function isRtlLocale(locale) {
-    var rtlLocales = ["ar", "he", "fa", "ur"];
-    return rtlLocales.indexOf(locale) !== -1;
-  }
-
-  /* Translation dictionary only for 100% custom non-miniOrange elements */
-  var translations = {
-    en: {
-      passwordStrength: "Password strength",
-      strengthWeak: "Weak",
-      strengthMedium: "Medium",
-      strengthStrong: "Strong",
-      strengthSufficient: "Sufficient",
-      newPasswordRequired: "New password is required.",
-      satisfyRequirements: "Please satisfy all password requirements.",
-      passwordsMustMatch: "The two passwords must match."
-    },
-    ar: {
-      passwordStrength: "قوة كلمة المرور",
-      strengthWeak: "ضعيف",
-      strengthMedium: "متوسط",
-      strengthStrong: "قوي",
-      strengthSufficient: "كافٍ",
-      newPasswordRequired: "كلمة المرور الجديدة مطلوبة.",
-      satisfyRequirements: "يرجى تلبية جميع متطلبات كلمة المرور.",
-      passwordsMustMatch: "يجب أن تتطابق كلمتا المرور."
-    }
-  };
-
-  function getTranslation(key) {
-    var locale = getLocale();
-    var dict = translations[locale] || translations["en"];
-    return dict[key] || translations["en"][key] || "";
-  }
-
-  function setButtonTextWithArrow(btn, defaultText) {
-    if (!btn) return;
-    var isRtl = isRtlLocale(getLocale());
-    var origBtnText = (btn.value || btn.textContent || defaultText).trim();
-    origBtnText = origBtnText.replace(/[\u2190\u2192]/g, "").trim();
-    if (btn.tagName.toLowerCase() === "input") {
-      var arrowStr = isRtl ? " \u2190" : " \u2192";
-      btn.value = origBtnText + arrowStr;
-    } else {
-      var arrowHtml = isRtl ? '<span style="margin-right: 6px;">&larr;</span>' : '<span style="margin-left: 6px;">&rarr;</span>';
-      btn.innerHTML = origBtnText + ' ' + arrowHtml;
-    }
-  }
-
   /* ── INJECT FONT AND CSS ── */
   function injectFontAndCss() {
-    var locale = getLocale();
-    if (isRtlLocale(locale)) {
-      document.documentElement.setAttribute("dir", "rtl");
-    } else {
-      document.documentElement.removeAttribute("dir");
-    }
 
-    /* ── FONT ── */
-    if (!document.getElementById("mo-font")) {
-      var lk = document.createElement("link");
-      lk.id = "mo-font"; lk.rel = "stylesheet";
-      lk.href = "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap";
-      document.head.appendChild(lk);
-    }
-
-    /* ── CSS ── */
-    if (!document.getElementById("mo-css")) {
-      var css =
-        /* Page bg — keep full viewport height so flex centering works */
-        "#login-main-body{" +
-        "background:#eef1f7!important;" +
-        "font-family:'Figtree',sans-serif!important;" +
-        "min-height:100vh!important;" +
-        "display:flex!important;" +
-        "align-items:center!important;" +
-        "justify-content:center!important;" +
-        "flex-direction:column!important;" +
-        "box-sizing:border-box!important;" +
-        "padding:40px 16px!important;" +
-        "}" +
-        "#login-body > br,#login-main-body > br{display:none!important;}" +
-
-        /* Logo — hidden */
-        "#login-header{display:none!important;}" +
-
-        /* Card */
-        "#login-wrapper{" +
-        "background:#fff!important;border:1px solid #e0e7ef!important;" +
-        "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
-        "padding:36px 40px 32px!important;max-width:560px!important;margin:0 auto!important;" +
-        "}" +
-
-        /* Form: stretch children to full width (removes Bootstrap center alignment) */
-        "#enduserloginform,#idploginform{align-items:stretch!important;}" +
-
-        /* Inner containers: full width, no extra padding */
-        "#enduserloginform .w-75,#enduserloginform .px-4,#idploginform .w-75,#idploginform .px-4{width:100%!important;padding-left:0!important;padding-right:0!important;max-width:100%!important;}" +
-        "#enduserloginform .row,#idploginform .row{margin:0!important;}" +
-
-        /* Hide original page elements */
-        ".login-header.custom-title,hr,#dynamicUserName,#feedback-msg,#username-error,br.my-2," +
-        "#goBack," +
-        "a[href*='businessfreetrial'],a[href*='forgotpassword']:not(#mo-forgot),a[href*='resetpassword']:not(#mo-forgot),.col-auto.form-group{display:none!important;}" +
-
-        /* LOG IN heading — top LEFT */
-        "#mo-title{display:block;font-family:'Figtree',sans-serif;font-size:26px;font-weight:800;" +
-        "color:#0d1b2a;margin-bottom:22px;text-align:left;}" +
-
-        /* Labels — left aligned */
-        ".mo-lbl{display:block;color:#3c515d;font-size:14px;font-weight:700;padding:0 0 4px;" +
-        "font-family:'Figtree',sans-serif;text-align:left;}" +
-        ".mo-lbl .mo-req{color:#e02020;margin-left:2px;}" +
-
-        /* Field group spacing */
-        ".mo-fg{margin-bottom:14px;width:100%;}" +
-
-        /* Shared input style */
-        "#username,#plaintextPassword,.mo-styled-input{" +
-        "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
-        "padding:0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
-        "color:#000933!important;background:#fff!important;width:100%!important;" +
-        "box-shadow:none!important;outline:none!important;box-sizing:border-box!important;" +
-        "margin-bottom:0!important;display:block!important;" +
-        "}" +
-        "#username::placeholder,#plaintextPassword::placeholder,.mo-styled-input::placeholder{color:#a0aab6!important;}" +
-        "#username:focus,#plaintextPassword:focus,.mo-styled-input:focus{border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;}" +
-
-        /* Password wrapper (eye toggle) */
-        ".mo-pw-wrap{position:relative;display:flex;align-items:center;width:100%;}" +
-        "#plaintextPassword,.mo-styled-input{padding-right:42px!important;}" +
-        ".mo-eye{position:absolute;right:10px;background:none;border:none;cursor:pointer;" +
-        "color:#6b7a8d;padding:4px;display:flex;align-items:center;}" +
-        ".mo-eye:hover{color:#0A55D7;}" +
-        ".mo-eye svg{width:18px;height:18px;pointer-events:none;}" +
-
-        /* Forgot link row — right aligned */
-        "#mo-bottom{display:flex;align-items:center;justify-content:flex-end;margin:16px 0 20px;width:100%;}" +
-        "#mo-forgot{font-size:13px;font-weight:500;color:#0A55D7;text-decoration:none;font-family:'Figtree',sans-serif;}" +
-        "#mo-forgot:hover{text-decoration:underline;}" +
-
-        /* Read-only username display on password step */
-        ".mo-user-display{height:40px;border:1px solid #C1CFD7;border-radius:4px;padding:0 12px;" +
-        "font-size:14px;color:#6b7a8d;background:#f5f7fa;display:flex;align-items:center;" +
-        "font-family:'Figtree',sans-serif;box-sizing:border-box;width:100%;cursor:default;}" +
-
-        /* Login button — left-aligned */
-        "#loginbutton{" +
-        "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
-        "gap:8px!important;min-height:40px!important;padding:8px 20px!important;" +
-        "border-radius:0!important;background:#0A55D7!important;background-color:#0A55D7!important;" +
-        "border:none!important;color:#fff!important;font-family:'Figtree',sans-serif!important;" +
-        "font-size:14px!important;font-weight:700!important;letter-spacing:.6px!important;" +
-        "text-transform:uppercase!important;cursor:pointer!important;box-shadow:none!important;width:auto!important;" +
-        "}" +
-        "#loginbutton:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
-        /* button row — left align the submit button */
-        "#enduserloginform .row div:has(#loginbutton),#idploginform .row div:has(#loginbutton){text-align:left!important;display:block!important;}" +
-
-        /* Mobile */
-        "@media(max-width:576px){" +
-        "#login-wrapper{padding:24px 18px 20px!important;}" +
-        ".mo-lbl,#username,#plaintextPassword{font-size:16px!important;}" +
-        "#loginbutton{font-size:12px!important;}" +
-        "}" +
-
-        /* RTL Overrides */
-        "[dir='rtl'] #mo-title{text-align:right!important;}" +
-        "[dir='rtl'] .mo-lbl{text-align:right!important;}" +
-        "[dir='rtl'] #enduserloginform .row div:has(#loginbutton),[dir='rtl'] #idploginform .row div:has(#loginbutton){text-align:right!important;}" +
-        "[dir='rtl'] .mo-eye{right:auto!important;left:10px!important;}" +
-        "[dir='rtl'] #plaintextPassword,[dir='rtl'] .mo-styled-input{padding-right:12px!important;padding-left:42px!important;}" +
-        "[dir='rtl'] #mo-bottom{justify-content:flex-start!important;}" +
-        "[dir='rtl'] #loginbutton{flex-direction:row-reverse!important;}" +
-        /* Forgot Password Page RTL Overrides */
-        "[dir='rtl'] #mo-fp-title{text-align:right!important;}" +
-        "[dir='rtl'] #mo-fp-lbl{text-align:right!important;}" +
-        "[dir='rtl'] #mo-fp-helper{text-align:right!important;}" +
-        "[dir='rtl'] #userform .row div:has(.custom-button), [dir='rtl'] .d-grid.mb-3{text-align:right!important;}" +
-        /* OTP Page RTL Overrides */
-        "[dir='rtl'] #mo-otp-title{text-align:right!important;}" +
-        "[dir='rtl'] #mo-otp-lbl{text-align:right!important;}" +
-        "[dir='rtl'] #modal-header-main{text-align:right!important;}" +
-        "[dir='rtl'] #modal-footer{justify-content:flex-end!important;}" +
-        "[dir='rtl'] #success-alert-message{text-align:right!important;border-left:none!important;border-right:4px solid #2e7d32!important;}" +
-        /* Change Password Page RTL Overrides */
-        "[dir='rtl'] #login-wrapper .login-header{flex-direction:row-reverse!important;text-align:right!important;}" +
-        "[dir='rtl'] #passwordform p.text-left, [dir='rtl'] #userform span.align-items-left, [dir='rtl'] #userform span.d-flex{text-align:right!important;}" +
-        "[dir='rtl'] #listcontent li{padding-left:0!important;padding-right:20px!important;text-align:right!important;}" +
-        "[dir='rtl'] #listcontent li::before{right:0!important;left:auto!important;}" +
-        "[dir='rtl'] #passwordform .row, [dir='rtl'] #userform .row{align-items:flex-end!important;}" +
-        "[dir='rtl'] #validate, [dir='rtl'] #submit{margin:10px 0 10px auto!important;align-self:flex-end!important;}" +
-        "[dir='rtl'] #pwd_strength{text-align:right!important;}";
-
-      var st = document.createElement("style");
-      st.id = "mo-css"; st.textContent = css;
-      document.head.appendChild(st);
-    }
+  /* ── FONT ── */
+  if (!document.getElementById("mo-font")) {
+    var lk = document.createElement("link");
+    lk.id = "mo-font"; lk.rel = "stylesheet";
+    lk.href = "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap";
+    document.head.appendChild(lk);
   }
+
+  /* ── CSS ── */
+  if (!document.getElementById("mo-css")) {
+    var css =
+      /* Page bg — keep full viewport height so flex centering works */
+      "#login-main-body{" +
+      "background:#eef1f7!important;" +
+      "font-family:'Figtree',sans-serif!important;" +
+      "min-height:100vh!important;" +
+      "display:flex!important;" +
+      "align-items:center!important;" +
+      "justify-content:center!important;" +
+      "flex-direction:column!important;" +
+      "box-sizing:border-box!important;" +
+      "padding:40px 16px!important;" +
+      "}" +
+      "#login-body > br,#login-main-body > br{display:none!important;}" +
+
+      /* Logo — hidden */
+      "#login-header{display:none!important;}" +
+
+      /* Card */
+      "#login-wrapper{" +
+      "background:#fff!important;border:1px solid #e0e7ef!important;" +
+      "border-radius:4px!important;box-shadow:0 2px 12px rgba(0,0,0,.08)!important;" +
+      "padding:36px 40px 32px!important;max-width:560px!important;margin:0 auto!important;" +
+      "}" +
+
+      /* Form: stretch children to full width (removes Bootstrap center alignment) */
+      "#enduserloginform,#idploginform{align-items:stretch!important;}" +
+
+      /* Inner containers: full width, no extra padding */
+      "#enduserloginform .w-75,#enduserloginform .px-4,#idploginform .w-75,#idploginform .px-4{width:100%!important;padding-left:0!important;padding-right:0!important;max-width:100%!important;}" +
+      "#enduserloginform .row,#idploginform .row{margin:0!important;}" +
+
+      /* Hide original page elements */
+      ".login-header.custom-title,hr,#dynamicUserName,#feedback-msg,#username-error,br.my-2," +
+      "#goBack," +
+      "a[href*='businessfreetrial'],a[href*='forgotpassword']:not(#mo-forgot),a[href*='resetpassword']:not(#mo-forgot),.col-auto.form-group{display:none!important;}" +
+
+      /* LOG IN heading — top LEFT */
+      "#mo-title{display:block;font-family:'Figtree',sans-serif;font-size:26px;font-weight:800;" +
+      "color:#0d1b2a;margin-bottom:22px;text-align:left;}" +
+
+      /* Labels — left aligned */
+      ".mo-lbl{display:block;color:#3c515d;font-size:14px;font-weight:700;padding:0 0 4px;" +
+      "font-family:'Figtree',sans-serif;text-align:left;}" +
+      ".mo-lbl .mo-req{color:#e02020;margin-left:2px;}" +
+
+      /* Field group spacing */
+      ".mo-fg{margin-bottom:14px;width:100%;}" +
+
+      /* Shared input style */
+      "#username,#plaintextPassword,.mo-styled-input{" +
+      "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
+      "padding:0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
+      "color:#000933!important;background:#fff!important;width:100%!important;" +
+      "box-shadow:none!important;outline:none!important;box-sizing:border-box!important;" +
+      "margin-bottom:0!important;display:block!important;" +
+      "}" +
+      "#username::placeholder,#plaintextPassword::placeholder,.mo-styled-input::placeholder{color:#a0aab6!important;}" +
+      "#username:focus,#plaintextPassword:focus,.mo-styled-input:focus{border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;}" +
+
+      /* Password wrapper (eye toggle) */
+      ".mo-pw-wrap{position:relative;display:flex;align-items:center;width:100%;}" +
+      "#plaintextPassword,.mo-styled-input{padding-right:42px!important;}" +
+      ".mo-eye{position:absolute;right:10px;background:none;border:none;cursor:pointer;" +
+      "color:#6b7a8d;padding:4px;display:flex;align-items:center;}" +
+      ".mo-eye:hover{color:#0A55D7;}" +
+      ".mo-eye svg{width:18px;height:18px;pointer-events:none;}" +
+
+      /* Forgot link row — right aligned */
+      "#mo-bottom{display:flex;align-items:center;justify-content:flex-end;margin:16px 0 20px;width:100%;}" +
+      "#mo-forgot{font-size:13px;font-weight:500;color:#0A55D7;text-decoration:none;font-family:'Figtree',sans-serif;}" +
+      "#mo-forgot:hover{text-decoration:underline;}" +
+
+      /* Read-only username display on password step */
+      ".mo-user-display{height:40px;border:1px solid #C1CFD7;border-radius:4px;padding:0 12px;" +
+      "font-size:14px;color:#6b7a8d;background:#f5f7fa;display:flex;align-items:center;" +
+      "font-family:'Figtree',sans-serif;box-sizing:border-box;width:100%;cursor:default;}" +
+
+      /* Login button — left-aligned */
+      "#loginbutton{" +
+      "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
+      "gap:8px!important;min-height:40px!important;padding:8px 20px!important;" +
+      "border-radius:0!important;background:#0A55D7!important;background-color:#0A55D7!important;" +
+      "border:none!important;color:#fff!important;font-family:'Figtree',sans-serif!important;" +
+      "font-size:14px!important;font-weight:700!important;letter-spacing:.6px!important;" +
+      "text-transform:uppercase!important;cursor:pointer!important;box-shadow:none!important;width:auto!important;" +
+      "}" +
+      "#loginbutton:hover{background:#0844b0!important;background-color:#0844b0!important;}" +
+      /* button row — left align the submit button */
+      "#enduserloginform .row div:has(#loginbutton),#idploginform .row div:has(#loginbutton){text-align:left!important;display:block!important;}" +
+
+      /* Mobile */
+      "@media(max-width:576px){" +
+      "#login-wrapper{padding:24px 18px 20px!important;}" +
+      ".mo-lbl,#username,#plaintextPassword{font-size:16px!important;}" +
+      "#loginbutton{font-size:12px!important;}" +
+      "}";
+
+    var st = document.createElement("style");
+    st.id = "mo-css"; st.textContent = css;
+    document.head.appendChild(st);
+  }
+}
 
   /* ── HELPERS ── */
   function getForgotHref() {
@@ -329,36 +176,24 @@
 
   /* ── STEP 1: Email page UI ── */
   function applyEmailStep() {
-    var pwField = document.getElementById("plaintextPassword");
-    // If password field is visible, we are NOT on the email step!
-    if (pwField && pwField.style.display !== "none" && !pwField.classList.contains("d-none")) {
-      var emailFg = document.getElementById("mo-email-fg");
-      if (emailFg) emailFg.style.setProperty("display", "none", "important");
-      return;
-    }
-
     var wrapper = document.getElementById("login-wrapper");
     if (!wrapper) return;
 
     /* LOG IN title — insert once before any form child */
-    var t = document.getElementById("mo-title");
-    if (!t) {
-      t = document.createElement("span");
-      t.id = "mo-title";
+    if (!document.getElementById("mo-title")) {
+      var t = document.createElement("span");
+      t.id = "mo-title"; t.textContent = "LOG IN";
       wrapper.insertBefore(t, wrapper.firstChild);
     }
-    var origHeader = document.querySelector(".login-header");
-    var titleText = origHeader ? origHeader.textContent.trim() : "LOG IN";
-    t.textContent = titleText;
 
     /* Email label above the username input */
     var userDiv = document.getElementById("userName");
-    var fg = document.getElementById("mo-email-fg");
-    if (userDiv && !fg) {
-      fg = document.createElement("div"); fg.className = "mo-fg"; fg.id = "mo-email-fg";
+    if (userDiv && !document.getElementById("mo-email-lbl")) {
+      var fg = document.createElement("div"); fg.className = "mo-fg";
       var lbl = document.createElement("label");
       lbl.id = "mo-email-lbl"; lbl.className = "mo-lbl";
       lbl.setAttribute("for", "username");
+      lbl.innerHTML = 'Email address <span class="mo-req">*</span>';
       fg.appendChild(lbl);
       userDiv.parentNode.insertBefore(fg, userDiv);
       fg.appendChild(userDiv);
@@ -366,32 +201,12 @@
       if (inp) inp.setAttribute("placeholder", "email");
     }
 
-    // Ensure step-specific elements are visibility-synchronized
-    if (fg) {
-      fg.style.setProperty("display", "block", "important");
-    }
-    var userFg = document.getElementById("mo-user-fg");
-    if (userFg) userFg.style.setProperty("display", "none", "important");
-    var pwLbl = document.getElementById("mo-pw-lbl");
-    if (pwLbl) pwLbl.style.setProperty("display", "none", "important");
-    var wrap = document.querySelector(".mo-pw-wrap");
-    if (wrap) wrap.style.setProperty("display", "none", "important");
-    var bottomRow = document.getElementById("mo-bottom");
-    if (bottomRow) bottomRow.style.setProperty("display", "none", "important");
-
-    var emailLbl = document.getElementById("mo-email-lbl");
-    if (emailLbl) {
-      var origEmailLbl = document.querySelector("label[for='username']:not(#mo-email-lbl):not(#mo-user-lbl)");
-      if (origEmailLbl) {
-        origEmailLbl.style.setProperty("display", "none", "important");
-      }
-      var emailLblText = (origEmailLbl && origEmailLbl.textContent.trim()) ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
-      emailLbl.innerHTML = emailLblText + ' <span class="mo-req">*</span>';
-    }
-
     /* Button label */
     var btn = document.getElementById("loginbutton");
-    setButtonTextWithArrow(btn, "LOG IN");
+    if (btn && !btn.dataset.mo) {
+      btn.value = "LOG IN \u2192";
+      btn.dataset.mo = "1";
+    }
 
     /* Hide hr and br */
     wrapper.querySelectorAll("hr,br").forEach(function (el) {
@@ -403,17 +218,7 @@
   function applyPasswordStep() {
     var pwField = document.getElementById("plaintextPassword");
     if (!pwField) return;                          // not the password step yet
-    if (pwField.style.display === "none" || pwField.classList.contains("d-none")) {
-      var userFg = document.getElementById("mo-user-fg");
-      if (userFg) userFg.style.setProperty("display", "none", "important");
-      var pwLbl = document.getElementById("mo-pw-lbl");
-      if (pwLbl) pwLbl.style.setProperty("display", "none", "important");
-      var wrap = document.querySelector(".mo-pw-wrap");
-      if (wrap) wrap.style.setProperty("display", "none", "important");
-      var bottomRow = document.getElementById("mo-bottom");
-      if (bottomRow) bottomRow.style.setProperty("display", "none", "important");
-      return;
-    }
+    if (pwField.style.display === "none" || pwField.classList.contains("d-none")) return;
 
     /* Force-hide elements that jQuery's showAdminPassword() re-shows */
     var dynUser = document.getElementById("dynamicUserName");
@@ -422,117 +227,80 @@
     if (goBack) { goBack.style.setProperty("display", "none", "important"); }
 
     /* Hide the step-1 email label+input wrapper (Xecurify only hides #userName, not our wrapper) */
-    var emailFg = document.getElementById("mo-email-fg");
-    if (emailFg) {
-      emailFg.style.setProperty("display", "none", "important");
+    var emailLbl = document.getElementById("mo-email-lbl");
+    if (emailLbl) {
+      var emailFg = emailLbl.closest(".mo-fg") || emailLbl.parentElement;
+      if (emailFg) emailFg.style.setProperty("display", "none", "important");
     }
 
-    /* LOG IN title ── */
+    /* LOG IN title — insert once before any form child */
     var wrapper = document.getElementById("login-wrapper");
-    var t = document.getElementById("mo-title");
-    if (wrapper && !t) {
-      t = document.createElement("span");
-      t.id = "mo-title";
+    if (wrapper && !document.getElementById("mo-title")) {
+      var t = document.createElement("span");
+      t.id = "mo-title"; t.textContent = "LOG IN";
       wrapper.insertBefore(t, wrapper.firstChild);
-    }
-    if (t) {
-      var origHeader = document.querySelector(".login-header");
-      var titleText = origHeader ? origHeader.textContent.trim() : "LOG IN";
-      t.textContent = titleText;
     }
 
     /* Button label */
     var btn = document.getElementById("loginbutton");
-    setButtonTextWithArrow(btn, "LOG IN");
+    if (btn && btn.value !== "LOG IN \u2192") {
+      btn.value = "LOG IN \u2192";
+    }
+
+    if (document.getElementById("mo-pw-lbl")) return; // already applied
 
     /* Password label above #plaintextPassword */
-    var pwLbl = document.getElementById("mo-pw-lbl");
-    if (!pwLbl) {
-      pwLbl = document.createElement("label");
-      pwLbl.id = "mo-pw-lbl"; pwLbl.className = "mo-lbl";
-      pwLbl.setAttribute("for", "plaintextPassword");
-      pwField.parentNode.insertBefore(pwLbl, pwField);
-    }
-    pwLbl.style.setProperty("display", "block", "important");
-    var origPwLbl = document.querySelector("label[for='plaintextPassword']:not(#mo-pw-lbl)");
-    if (origPwLbl) {
-      origPwLbl.style.setProperty("display", "none", "important");
-    }
-    var pwLblText = (origPwLbl && origPwLbl.textContent.trim()) ? origPwLbl.textContent.replace(/\*/g, "").trim() : "Password";
-    pwLbl.innerHTML = pwLblText + ' <span class="mo-req">*</span>';
+    var pwLbl = document.createElement("label");
+    pwLbl.id = "mo-pw-lbl"; pwLbl.className = "mo-lbl";
+    pwLbl.setAttribute("for", "plaintextPassword");
+    pwLbl.innerHTML = 'Password <span class="mo-req">*</span>';
+    pwField.parentNode.insertBefore(pwLbl, pwField);
 
-    /* Show/Update read-only username above password field */
-    var usernameVal = "";
-    var unInp = document.getElementById("username");
-    if (unInp && unInp.value) usernameVal = unInp.value;
-    if (!usernameVal && dynUser) usernameVal = dynUser.textContent.trim();
-
-    var userFg = document.getElementById("mo-user-fg");
-    if (!userFg && usernameVal) {
-      userFg = document.createElement("div"); userFg.className = "mo-fg"; userFg.id = "mo-user-fg";
-      var userLbl = document.createElement("label"); userLbl.className = "mo-lbl"; userLbl.id = "mo-user-lbl";
-      var userBox = document.createElement("div"); userBox.id = "mo-user-display";
-      userBox.className = "mo-user-display";
-      userBox.textContent = usernameVal;
-      userFg.appendChild(userLbl); userFg.appendChild(userBox);
-      pwLbl.parentNode.insertBefore(userFg, pwLbl);
-    }
-    if (userFg) {
-      userFg.style.setProperty("display", "block", "important");
-      var userBox = document.getElementById("mo-user-display");
-      if (userBox && usernameVal) {
+    /* Show read-only username above password field */
+    if (!document.getElementById("mo-user-display")) {
+      var usernameVal = "";
+      var unInp = document.getElementById("username");
+      if (unInp && unInp.value) usernameVal = unInp.value;
+      if (!usernameVal && dynUser) usernameVal = dynUser.textContent.trim();
+      if (usernameVal) {
+        var userFg = document.createElement("div"); userFg.className = "mo-fg";
+        var userLbl = document.createElement("label"); userLbl.className = "mo-lbl";
+        userLbl.textContent = "Email address";
+        var userBox = document.createElement("div"); userBox.id = "mo-user-display";
+        userBox.className = "mo-user-display";
         userBox.textContent = usernameVal;
+        userFg.appendChild(userLbl); userFg.appendChild(userBox);
+        pwLbl.parentNode.insertBefore(userFg, pwLbl);
       }
-    }
-    var userLblEl = document.getElementById("mo-user-lbl");
-    if (userLblEl) {
-      var origEmailLbl = document.querySelector("label[for='username']:not(#mo-email-lbl):not(#mo-user-lbl)");
-      var emailLblText = (origEmailLbl && origEmailLbl.textContent.trim()) ? origEmailLbl.textContent.replace(/\*/g, "").trim() : "Email address";
-      userLblEl.textContent = emailLblText;
     }
 
     /* Wrap password field in .mo-pw-wrap for eye toggle */
-    if (pwField.parentNode.className !== "mo-pw-wrap") {
-      var wrap = document.createElement("div"); wrap.className = "mo-pw-wrap";
-      pwField.parentNode.insertBefore(wrap, pwField);
-      wrap.appendChild(pwField);
-      pwField.setAttribute("placeholder", "Password");
+    var wrap = document.createElement("div"); wrap.className = "mo-pw-wrap";
+    pwField.parentNode.insertBefore(wrap, pwField);
+    wrap.appendChild(pwField);
+    pwField.setAttribute("placeholder", "Password");
 
-      /* Eye toggle button */
-      var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-      var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-      var eyeBtn = document.createElement("button");
-      eyeBtn.type = "button"; eyeBtn.className = "mo-eye";
-      eyeBtn.setAttribute("aria-label", "Toggle password visibility");
-      eyeBtn.innerHTML = EYE_OFF;
-      eyeBtn.addEventListener("click", function () {
-        var show = pwField.type === "password";
-        pwField.type = show ? "text" : "password";
-        eyeBtn.innerHTML = show ? EYE_ON : EYE_OFF;
-      });
-      wrap.appendChild(eyeBtn);
-    }
-    var wrapEl = pwField.closest(".mo-pw-wrap");
-    if (wrapEl) {
-      wrapEl.style.setProperty("display", "flex", "important");
-    }
+    /* Eye toggle button */
+    var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var eyeBtn = document.createElement("button");
+    eyeBtn.type = "button"; eyeBtn.className = "mo-eye";
+    eyeBtn.setAttribute("aria-label", "Toggle password visibility");
+    eyeBtn.innerHTML = EYE_OFF;
+    eyeBtn.addEventListener("click", function () {
+      var show = pwField.type === "password";
+      pwField.type = show ? "text" : "password";
+      eyeBtn.innerHTML = show ? EYE_ON : EYE_OFF;
+    });
+    wrap.appendChild(eyeBtn);
 
     /* Forgot password link only (no Remember me checkbox) */
-    var bottomRow = document.getElementById("mo-bottom");
-    if (!bottomRow) {
-      bottomRow = document.createElement("div"); bottomRow.id = "mo-bottom";
+    if (!document.getElementById("mo-bottom")) {
+      var row = document.createElement("div"); row.id = "mo-bottom";
       var fl = document.createElement("a"); fl.id = "mo-forgot";
-      fl.href = getForgotHref();
-      bottomRow.appendChild(fl);
-      var wrapForForgot = wrapEl || pwField;
-      wrapForForgot.parentNode.insertBefore(bottomRow, wrapForForgot.nextSibling);
-    }
-    bottomRow.style.setProperty("display", "flex", "important");
-    var forgotLinkEl = document.getElementById("mo-forgot");
-    if (forgotLinkEl) {
-      var origForgotLink = document.querySelector("a[href*='forgotpassword'], a[href*='resetpassword']");
-      var forgotLinkText = origForgotLink ? origForgotLink.textContent.trim() : "Forgot password";
-      forgotLinkEl.textContent = forgotLinkText;
+      fl.href = getForgotHref(); fl.textContent = "Forgot password";
+      row.appendChild(fl);
+      wrap.parentNode.insertBefore(row, wrap.nextSibling);
     }
   }
 
@@ -581,7 +349,7 @@
         "#root>div{background:#eef1f7!important;}" +
         "#login-header{display:none!important;}" +
         "body #login-body, body .container-fluid{" +
-        "width:100%!important;max-width:100%!important;margin:0 auto!important;padding:24px 16px!important;" +
+        "width:100%!important;max-  width:100%!important;margin:0 auto!important;padding:24px 16px!important;" +
         "display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;" +
         "box-sizing:border-box!important;background:transparent!important;float:none!important;" +
         "height:auto!important;min-height:unset!important;" +
@@ -714,75 +482,64 @@
       el.style.setProperty("display", "none", "important");
     });
 
+    /* ── DOM injection — only once ── */
+    if (document.getElementById("mo-forgot-done")) return;
+
     /* Find the form element */
     var fpForm = emailInput.closest("form");
     if (!fpForm) return;
 
     /* Insert RESET PASSWORD title + subtitle before the form */
-    var fpTitle = document.getElementById("mo-fp-title");
-    if (!fpTitle) {
-      fpTitle = document.createElement("span");
-      fpTitle.id = "mo-fp-title";
+    if (!document.getElementById("mo-fp-title")) {
+      var fpTitle = document.createElement("span");
+      fpTitle.id = "mo-fp-title"; fpTitle.textContent = "RESET PASSWORD";
       fpForm.parentNode.insertBefore(fpTitle, fpForm);
-    }
-    var origH4 = document.querySelector("h4");
-    var fpTitleText = origH4 ? origH4.textContent.trim() : "RESET PASSWORD";
-    fpTitle.textContent = fpTitleText;
 
-    var fpSub = document.getElementById("mo-fp-subtitle");
-    if (!fpSub) {
-      fpSub = document.createElement("span");
+      var fpSub = document.createElement("span");
       fpSub.id = "mo-fp-subtitle";
+      fpSub.textContent = "We will send you an email with instructions on how to recover it";
       fpForm.parentNode.insertBefore(fpSub, fpForm);
     }
-    var origP = document.querySelector("p.text-muted");
-    var fpSubtitleText = origP ? origP.textContent.trim() : "We will send you an email with instructions on how to recover it";
-    fpSub.textContent = fpSubtitleText;
 
     /* Replace/create label text */
-    var fpLbl = document.getElementById("mo-fp-lbl");
-    if (!fpLbl) {
-      fpLbl = document.createElement("label");
-      fpLbl.id = "mo-fp-lbl";
-      fpLbl.setAttribute("for", emailInput.id);
-      emailInput.parentNode.insertBefore(fpLbl, emailInput);
+    var origLabel = fpForm.querySelector("label[for='emailAddress']") || fpForm.querySelector("label[for='username']") || document.getElementById("mo-fp-lbl");
+    if (!origLabel) {
+      origLabel = document.createElement("label");
+      origLabel.setAttribute("for", emailInput.id);
+      origLabel.id = "mo-fp-lbl";
+      origLabel.innerHTML = 'Email address <span class="mo-req">*</span>';
+      emailInput.parentNode.insertBefore(origLabel, emailInput);
+    } else if (origLabel.id !== "mo-fp-lbl") {
+      origLabel.id = "mo-fp-lbl"; origLabel.className = "";
+      origLabel.innerHTML = 'Email address <span class="mo-req">*</span>';
     }
-    var origLabel = fpForm.querySelector("label[for='emailAddress']:not(#mo-fp-lbl)") || fpForm.querySelector("label[for='username']:not(#mo-fp-lbl)");
-    if (origLabel) {
-      origLabel.style.setProperty("display", "none", "important");
-    }
-    var origLabelText = (origLabel && origLabel.textContent.trim()) ? origLabel.textContent.replace(/\*/g, "").trim() : "Email address";
-    fpLbl.innerHTML = origLabelText + ' <span class="mo-req">*</span>';
 
     /* Fix input placeholder */
     emailInput.setAttribute("placeholder", "email");
 
-    /* Insert helper text after the input wrapper */
-    var helper = document.getElementById("mo-fp-helper");
-    if (!helper) {
+    /* Insert helper text after the input wrapper (once) */
+    if (!document.getElementById("mo-fp-helper")) {
       var inputWrapper = emailInput.closest(".mb-3") || emailInput.closest(".username-custom") || emailInput.closest(".row");
       if (inputWrapper) {
-        helper = document.createElement("p");
+        var helper = document.createElement("p");
         helper.id = "mo-fp-helper";
+        helper.innerHTML =
+          "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Can\u2019t figure it out?<br>" +
+          '<a href="mailto:support@example.com">Contact customer service</a>';
         inputWrapper.parentNode.insertBefore(helper, inputWrapper.nextSibling);
       }
-    }
-    if (helper) {
-      var origHelpDiv = document.querySelector(".small.text-muted") || document.querySelector("p.text-muted.small");
-      var helpText = origHelpDiv ? origHelpDiv.innerHTML : "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Can’t figure it out?<br><a href=\"mailto:support@example.com\">Contact customer service</a>";
-      helper.innerHTML = helpText;
     }
 
     /* Change button text to NEXT → */
     var fpBtn = fpForm.querySelector("button") || fpForm.querySelector("input[type='submit']");
-    setButtonTextWithArrow(fpBtn, "NEXT");
+    if (fpBtn && fpBtn.textContent.trim().indexOf("NEXT") === -1) {
+      fpBtn.innerHTML = 'NEXT <span style="margin-left: 6px;">&rarr;</span>';
+    }
 
     /* Mark as done */
-    if (!document.getElementById("mo-forgot-done")) {
-      var done = document.createElement("span");
-      done.id = "mo-forgot-done"; done.style.display = "none";
-      document.body.appendChild(done);
-    }
+    var done = document.createElement("span");
+    done.id = "mo-forgot-done"; done.style.display = "none";
+    document.body.appendChild(done);
   }
 
   /* ── OTP VERIFY PAGE (/moas/idp/validatenextfactor) ── */
@@ -855,60 +612,44 @@
       document.head.appendChild(otpSt);
     }
 
+    /* DOM changes — only once */
+    if (document.getElementById("mo-otp-done")) return;
     var otpInput = document.getElementById("otpToken");
     if (!otpInput) return;
 
     /* VERIFY YOUR IDENTITY title */
     var modalHeader = document.getElementById("modal-header-main");
-    var otpTitle = document.getElementById("mo-otp-title");
-    if (modalHeader && !otpTitle) {
-      otpTitle = document.createElement("span");
+    if (modalHeader && !document.getElementById("mo-otp-title")) {
+      var otpTitle = document.createElement("span");
       otpTitle.id = "mo-otp-title";
+      otpTitle.textContent = "VERIFY YOUR IDENTITY";
       modalHeader.insertBefore(otpTitle, modalHeader.firstChild);
-    }
-    if (otpTitle) {
-      var origOtpTitle = document.querySelector(".modal-title");
-      var otpTitleText = origOtpTitle ? origOtpTitle.textContent.trim() : "VERIFY YOUR IDENTITY";
-      otpTitle.textContent = otpTitleText;
     }
 
     /* Label above OTP input */
-    var otpLbl = document.getElementById("mo-otp-lbl");
-    if (!otpLbl) {
-      otpLbl = document.createElement("label");
+    if (!document.getElementById("mo-otp-lbl")) {
+      var otpLbl = document.createElement("label");
       otpLbl.id = "mo-otp-lbl";
       otpLbl.setAttribute("for", "otpToken");
+      otpLbl.innerHTML = 'Enter OTP here <span class="mo-req">*</span>';
       otpInput.parentNode.insertBefore(otpLbl, otpInput);
     }
-    var origOtpLbl = document.querySelector("label[for='otpToken']:not(#mo-otp-lbl)");
-    if (origOtpLbl) {
-      origOtpLbl.style.setProperty("display", "none", "important");
-    }
-    var otpLblText = (origOtpLbl && origOtpLbl.textContent.trim()) ? origOtpLbl.textContent.replace(/\*/g, "").trim() : "Enter OTP here";
-    otpLbl.innerHTML = otpLblText + ' <span class="mo-req">*</span>';
 
     /* Placeholder */
-    var origPlaceholder = otpInput.getAttribute("placeholder") || "OTP number";
-    otpInput.setAttribute("placeholder", origPlaceholder);
+    otpInput.setAttribute("placeholder", "OTP number");
 
     /* Verify button */
     var verifyBtn = document.getElementById("validate");
-    setButtonTextWithArrow(verifyBtn, "VERIFY");
+    if (verifyBtn) verifyBtn.value = "VERIFY \u2192";
 
     /* Cancel button */
     var cancelBtn = document.querySelector(".btn-cancel");
-    if (cancelBtn) {
-      var origCancelBtn = document.querySelector(".btn-cancel");
-      var cancelBtnText = origCancelBtn ? origCancelBtn.textContent.trim() : "CANCEL";
-      cancelBtn.textContent = cancelBtnText;
-    }
+    if (cancelBtn) cancelBtn.textContent = "CANCEL";
 
     /* Mark done */
-    if (!document.getElementById("mo-otp-done")) {
-      var otpDone = document.createElement("span");
-      otpDone.id = "mo-otp-done"; otpDone.style.display = "none";
-      document.body.appendChild(otpDone);
-    }
+    var otpDone = document.createElement("span");
+    otpDone.id = "mo-otp-done"; otpDone.style.display = "none";
+    document.body.appendChild(otpDone);
   }
 
   /* ── CHANGE PASSWORD PAGE (/moas/idp/changepassword) ── */
@@ -1030,31 +771,31 @@
 
     /* Update title to LOGIN DETAILS with close x button */
     var h3 = document.querySelector(".login-header");
-    if (h3) {
-      var closeBtn = document.getElementById("mo-cp-close");
-      if (!closeBtn) {
-        closeBtn = document.createElement("a");
-        closeBtn.id = "mo-cp-close";
-        closeBtn.href = "login";
-        closeBtn.innerHTML = "&times;";
-        closeBtn.style.color = "#a0aab6";
-        closeBtn.style.textDecoration = "none";
-        closeBtn.style.fontSize = "24px";
-        closeBtn.style.fontWeight = "400";
-        closeBtn.style.cursor = "pointer";
-        closeBtn.style.lineHeight = "1";
-      }
-      var origH3 = document.querySelector(".login-header");
-      var h3Text = origH3 ? origH3.textContent.replace(/×/g, "").trim() : "LOGIN DETAILS";
-      h3.textContent = h3Text + " ";
+    if (h3 && !document.getElementById("mo-cp-close")) {
+      h3.textContent = "LOGIN DETAILS";
+      
+      var closeBtn = document.createElement("a");
+      closeBtn.id = "mo-cp-close";
+      closeBtn.href = "login";
+      closeBtn.innerHTML = "&times;";
+      closeBtn.style.color = "#a0aab6";
+      closeBtn.style.textDecoration = "none";
+      closeBtn.style.fontSize = "24px";
+      closeBtn.style.fontWeight = "400";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.style.lineHeight = "1";
       h3.appendChild(closeBtn);
     }
 
     /* Add * to labels */
     var labelSelector = "#passwordform p.text-left, #userform span.align-items-left, #userform span.d-flex";
     document.querySelectorAll(labelSelector).forEach(function (p) {
-      if (p.querySelector(".mo-req")) return; // already added
-      p.innerHTML = p.innerHTML.trim() + ' <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
+      var t = p.textContent.trim();
+      if (t.toLowerCase().indexOf("new password") !== -1 && !p.querySelector(".mo-req")) {
+        p.innerHTML = 'New password <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
+      } else if (t.toLowerCase().indexOf("confirm password") !== -1 && !p.querySelector(".mo-req")) {
+        p.innerHTML = 'Confirm password <span class="mo-req" style="color:#e02020; margin-left:2px;">*</span>';
+      }
     });
 
     /* Deduplicate requirements list if Xecurify script duplicated them */
@@ -1080,29 +821,20 @@
     }
 
     /* Append strength meter */
-    var strengthContainer = document.getElementById("mo-strength-container");
-    if (requirementsBlock && !strengthContainer) {
-      strengthContainer = document.createElement("div");
+    if (requirementsBlock && !document.getElementById("mo-strength-container")) {
+      var strengthContainer = document.createElement("div");
       strengthContainer.id = "mo-strength-container";
       strengthContainer.style.width = "100%";
       strengthContainer.style.boxSizing = "border-box";
       strengthContainer.innerHTML =
         '<div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 6px 0; width:100%;">' +
-        '<span id="mo-strength-label" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#3c515d;"></span>' +
-        '<span id="mo-strength-value" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#a0aab6;"></span>' +
+          '<span id="mo-strength-label" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#3c515d;">Password strength</span>' +
+          '<span id="mo-strength-value" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#a0aab6;">Weak</span>' +
         '</div>' +
         '<div id="mo-strength-bar-wrap" style="height:4px; background:#e0e7ef; border-radius:2px; overflow:hidden; width:100%;">' +
-        '<div id="mo-strength-bar-fill" style="height:100%; width:0%; background:#e0e7ef; transition: width 0.3s ease, background-color 0.3s ease;"></div>' +
+          '<div id="mo-strength-bar-fill" style="height:100%; width:0%; background:#e0e7ef; transition: width 0.3s ease, background-color 0.3s ease;"></div>' +
         '</div>';
       requirementsBlock.appendChild(strengthContainer);
-    }
-    if (strengthContainer) {
-      var lblEl = document.getElementById("mo-strength-label");
-      var valEl = document.getElementById("mo-strength-value");
-      if (lblEl) lblEl.textContent = getTranslation("passwordStrength");
-      if (valEl && (!newPasswordInput || newPasswordInput.value === "")) {
-        valEl.textContent = getTranslation("strengthWeak");
-      }
     }
 
     /* Dynamic Validation Function */
@@ -1118,39 +850,29 @@
         var txt = li.textContent.trim().toLowerCase();
         var isValid = false;
 
-        var isMin = txt.indexOf("minimum") !== -1 || txt.indexOf("characters") !== -1 || 
-                    txt.indexOf("أقل") !== -1 || txt.indexOf("أدنى") !== -1 || txt.indexOf("حرف") !== -1;
-        var isMax = txt.indexOf("maximum") !== -1 || txt.indexOf("أقصى") !== -1 || txt.indexOf("يزيد") !== -1;
-        var isUpper = txt.indexOf("uppercase") !== -1 || txt.indexOf("كبير") !== -1;
-        var isLower = txt.indexOf("lowercase") !== -1 || txt.indexOf("صغير") !== -1;
-        var isDigit = txt.indexOf("number") !== -1 || txt.indexOf("digit") !== -1 || 
-                      txt.indexOf("رقم") !== -1 || txt.indexOf("أرقام") !== -1 || txt.indexOf("عدد") !== -1;
-        var isSymbol = txt.indexOf("symbol") !== -1 || txt.indexOf("special") !== -1 || 
-                       txt.indexOf("رمز") !== -1 || txt.indexOf("رموز") !== -1;
-
-        if (isMin) {
-          var minMatch = txt.match(/minimum\s+(\d+)/) || txt.match(/(\d+)-(\d+)\s+characters/) || txt.match(/(\d+)/);
+        if (txt.indexOf("minimum") !== -1 || txt.indexOf("characters") !== -1) {
+          var minMatch = txt.match(/minimum\s+(\d+)/) || txt.match(/(\d+)-(\d+)\s+characters/);
           if (minMatch) {
-            var minLen = parseInt(minMatch[1] || minMatch[2], 10);
+            var minLen = parseInt(minMatch[1], 10);
             if (val.length >= minLen) isValid = true;
           } else {
             if (val.length >= 6) isValid = true;
           }
-        } else if (isMax) {
-          var maxMatch = txt.match(/maximum\s+(\d+)/) || txt.match(/(\d+)/);
+        } else if (txt.indexOf("maximum") !== -1) {
+          var maxMatch = txt.match(/maximum\s+(\d+)/);
           if (maxMatch) {
-            var maxLen = parseInt(maxMatch[1] || maxMatch[0], 10);
+            var maxLen = parseInt(maxMatch[1], 10);
             if (val.length <= maxLen && val.length > 0) isValid = true;
           } else {
             if (val.length <= 20 && val.length > 0) isValid = true;
           }
-        } else if (isUpper) {
+        } else if (txt.indexOf("uppercase") !== -1) {
           if (/[A-Z]/.test(val)) isValid = true;
-        } else if (isLower) {
+        } else if (txt.indexOf("lowercase") !== -1) {
           if (/[a-z]/.test(val)) isValid = true;
-        } else if (isDigit) {
+        } else if (txt.indexOf("number") !== -1 || txt.indexOf("digit") !== -1) {
           if (/[0-9]/.test(val)) isValid = true;
-        } else if (isSymbol) {
+        } else if (txt.indexOf("symbol") !== -1 || txt.indexOf("special") !== -1 || txt.indexOf("allowed symbols") !== -1) {
           if (/[!@#\$%\^&\*\-_\.]/.test(val)) isValid = true;
         } else {
           if (val.length > 0) isValid = true;
@@ -1170,7 +892,7 @@
       var strengthFill = document.getElementById("mo-strength-bar-fill");
       if (strengthValue && strengthFill) {
         if (val.length === 0) {
-          strengthValue.textContent = getTranslation("strengthWeak");
+          strengthValue.textContent = "Weak";
           strengthValue.style.color = "#a0aab6";
           strengthFill.style.width = "0%";
           strengthFill.style.backgroundColor = "#e0e7ef";
@@ -1179,19 +901,19 @@
           strengthFill.style.width = pct + "%";
 
           if (pct < 40) {
-            strengthValue.textContent = getTranslation("strengthWeak");
+            strengthValue.textContent = "Weak";
             strengthValue.style.color = "#e02020";
             strengthFill.style.backgroundColor = "#e02020";
           } else if (pct < 70) {
-            strengthValue.textContent = getTranslation("strengthMedium");
+            strengthValue.textContent = "Medium";
             strengthValue.style.color = "#ff9800";
             strengthFill.style.backgroundColor = "#ff9800";
           } else if (pct < 100) {
-            strengthValue.textContent = getTranslation("strengthStrong");
+            strengthValue.textContent = "Strong";
             strengthValue.style.color = "#0A55D7";
             strengthFill.style.backgroundColor = "#0A55D7";
           } else {
-            strengthValue.textContent = getTranslation("strengthSufficient");
+            strengthValue.textContent = "Sufficient";
             strengthValue.style.color = "#2e7d32";
             strengthFill.style.backgroundColor = "#2e7d32";
           }
@@ -1204,6 +926,12 @@
       newPasswordInput.dataset.moListener = "true";
       newPasswordInput.addEventListener("input", updatePasswordRequirementsAndStrength);
       updatePasswordRequirementsAndStrength();
+    }
+
+    /* Update button text to SAVE */
+    var saveBtn = document.getElementById("validate") || document.getElementById("submit");
+    if (saveBtn) {
+      saveBtn.value = "SAVE";
     }
 
     /* Disable native HTML5 validation bubbles/hovers */
@@ -1242,7 +970,7 @@
         if (!val) {
           e.preventDefault();
           if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>" + getTranslation("newPasswordRequired") + "</font>";
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>New password is required.</font>";
           }
           if (newPasswordInput) newPasswordInput.focus();
           return;
@@ -1252,7 +980,7 @@
         if (invalidItems.length > 0) {
           e.preventDefault();
           if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>" + getTranslation("satisfyRequirements") + "</font>";
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>Please satisfy all password requirements.</font>";
           }
           if (newPasswordInput) newPasswordInput.focus();
           return;
@@ -1261,7 +989,7 @@
         if (val !== confirmVal) {
           e.preventDefault();
           if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>" + getTranslation("passwordsMustMatch") + "</font>";
+            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>The two passwords must match.</font>";
           }
           if (confirmPasswordInput) confirmPasswordInput.focus();
           return;
@@ -1303,7 +1031,7 @@
     }
 
     if (isForgot) { applyForgotPage(); }
-    if (isOtp) { applyOtpPage(); }
+    if (isOtp)    { applyOtpPage(); }
     if (isChangePass) { applyChangePasswordPage(); }
   }
 
@@ -1324,7 +1052,7 @@
 
     if (isLogin) { forceHide(); applyPasswordStep(); }
     if (isForgot) { applyForgotPage(); }
-    if (isOtp) { applyOtpPage(); }
+    if (isOtp)    { applyOtpPage(); }
     if (isChangePass) { applyChangePasswordPage(); }
   });
   observer.observe(document.body, {
