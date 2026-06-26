@@ -160,7 +160,20 @@
       "#login-wrapper{padding:24px 18px 20px!important;}" +
       ".mo-lbl,#username,#plaintextPassword{font-size:16px!important;}" +
       "#loginbutton{font-size:12px!important;}" +
-      "}";
+      "}" +
+
+      /* Input Error Styling */
+      ".mo-input-error { border-color: #ef2f2f!important; }" +
+      ".mo-input-error:focus { box-shadow: 0 0 0 3px rgba(239, 47, 47, .12)!important; }" +
+      ".mo-error-text { color: #ef2f2f; font-size: 13px; font-weight: 500; margin-top: 6px; text-align: left; display: block; font-family: 'Figtree', sans-serif; }" +
+      "[dir='rtl'] .mo-error-text { text-align: right!important; }" +
+      ".mo-error-icon { position: absolute; right: 12px; display: flex; align-items: center; pointer-events: none; color: #ef2f2f; }" +
+      ".mo-error-icon svg { width: 18px; height: 18px; fill: currentColor; }" +
+      ".mo-input-error { padding-right: 40px!important; }" +
+      "[dir='rtl'] .mo-error-icon { right: auto!important; left: 12px!important; }" +
+      "[dir='rtl'] .mo-input-error { padding-right: 12px!important; padding-left: 40px!important; }" +
+      ".mo-pw-wrap .mo-error-icon { right: 36px!important; }" +
+      "[dir='rtl'] .mo-pw-wrap .mo-error-icon { right: auto!important; left: 36px!important; }";
 
     var st = document.createElement("style");
     st.id = "mo-css"; st.textContent = css;
@@ -326,6 +339,93 @@
         }
       }
     });
+  }
+
+  /* ── LOGIN ERROR HANDLER ── */
+  function handleLoginErrors() {
+    var feedbackEl = document.getElementById("feedback-msg");
+    var userErrorEl = document.getElementById("username-error");
+    var errorText = "";
+
+    if (feedbackEl && feedbackEl.textContent.trim()) {
+      errorText = feedbackEl.textContent.trim();
+    } else if (userErrorEl && userErrorEl.textContent.trim()) {
+      errorText = userErrorEl.textContent.trim();
+    }
+
+    // Clean existing styled error indicators
+    document.querySelectorAll(".mo-input-error").forEach(function (inp) {
+      inp.classList.remove("mo-input-error");
+    });
+    document.querySelectorAll(".mo-error-icon").forEach(function (ico) {
+      ico.remove();
+    });
+    document.querySelectorAll(".mo-error-text").forEach(function (txt) {
+      txt.remove();
+    });
+
+    if (!errorText) return;
+
+    var isLogin = checkIsLogin();
+    if (!isLogin) return;
+
+    var pwField = document.getElementById("plaintextPassword");
+    var isPasswordStep = pwField && pwField.style.display !== "none" && !pwField.classList.contains("d-none");
+
+    if (isPasswordStep) {
+      var input = document.getElementById("plaintextPassword");
+      if (input) {
+        input.classList.add("mo-input-error");
+        var wrap = input.closest(".mo-pw-wrap");
+        if (wrap && !wrap.querySelector(".mo-error-icon")) {
+          var icon = document.createElement("span");
+          icon.className = "mo-error-icon";
+          icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>';
+          wrap.appendChild(icon);
+        }
+        var errorMsgId = "mo-pw-error-msg";
+        var errorMsg = document.getElementById(errorMsgId);
+        if (!errorMsg) {
+          errorMsg = document.createElement("span");
+          errorMsg.id = errorMsgId;
+          errorMsg.className = "mo-error-text";
+          var insertTarget = wrap || input;
+          insertTarget.parentNode.insertBefore(errorMsg, insertTarget.nextSibling);
+        }
+        errorMsg.textContent = errorText;
+      }
+    } else {
+      var input = document.getElementById("username");
+      if (input) {
+        input.classList.add("mo-input-error");
+        var wrap = input.parentNode;
+        if (wrap.className !== "mo-input-wrap") {
+          wrap = document.createElement("div");
+          wrap.className = "mo-input-wrap";
+          wrap.style.position = "relative";
+          wrap.style.display = "flex";
+          wrap.style.alignItems = "center";
+          wrap.style.width = "100%";
+          input.parentNode.insertBefore(wrap, input);
+          wrap.appendChild(input);
+        }
+        if (wrap && !wrap.querySelector(".mo-error-icon")) {
+          var icon = document.createElement("span");
+          icon.className = "mo-error-icon";
+          icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>';
+          wrap.appendChild(icon);
+        }
+        var errorMsgId = "mo-email-error-msg";
+        var errorMsg = document.getElementById(errorMsgId);
+        if (!errorMsg) {
+          errorMsg = document.createElement("span");
+          errorMsg.id = errorMsgId;
+          errorMsg.className = "mo-error-text";
+          wrap.parentNode.insertBefore(errorMsg, wrap.nextSibling);
+        }
+        errorMsg.textContent = errorText;
+      }
+    }
   }
 
   /* ── FORGOT PASSWORD PAGE (/moas/idp/forgotpassword) ── */
@@ -680,48 +780,14 @@
         "border:none!important;padding:0!important;" +
         "}" +
 
-        /* Hide line separators */
-        "#login-wrapper hr{display:none!important;}" +
+        /* Hide line separators and old alert box */
+        "#login-wrapper hr,.password-padding{display:none!important;}" +
 
         /* Form stack */
         "#passwordform .row,#userform .row{margin:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;}" +
         "#passwordform .col-md-5,#passwordform .col-md-8,#passwordform .offset-md-1,#passwordform .offset-md-2," +
         "#userform .col-xs-5,#userform .col-xs-offset-1,#userform .col-xs-10,#userform .col-xs-offset-2{" +
         "width:100%!important;max-width:100%!important;padding:0!important;margin:0!important;text-align:left!important;" +
-        "}" +
-
-        /* Password requirements alert box customization */
-        ".password-padding{padding:0!important;margin:10px 0 20px 0!important;width:100%!important;}" +
-        ".password-padding .alert-info{" +
-        "background:transparent!important;border:none!important;" +
-        "padding:0!important;margin:0!important;width:100%!important;" +
-        "}" +
-        ".password-padding h5{" +
-        "font-family:'Figtree',sans-serif!important;font-size:14px!important;" +
-        "font-weight:700!important;color:#3c515d!important;" +
-        "margin-bottom:8px!important;" +
-        "}" +
-        "#listcontent{padding-left:0!important;margin:0!important;list-style:none!important;}" +
-        "#listcontent li{" +
-        "font-family:'Figtree',sans-serif!important;font-size:13px!important;" +
-        "margin-bottom:6px!important;" +
-        "display:flex!important;align-items:center!important;" +
-        "gap:8px!important;" +
-        "list-style:none!important;" +
-        "position:relative!important;" +
-        "padding-left:20px!important;" +
-        "text-align:left!important;" +
-        "transition:color 0.2s ease!important;" +
-        "}" +
-        "#listcontent li.mo-valid{color:#2e7d32!important;}" +
-        "#listcontent li.mo-invalid{color:#82829c!important;}" +
-        "#listcontent li.mo-valid::before{" +
-        "content:'✓'!important;position:absolute!important;left:0!important;" +
-        "color:#2e7d32!important;font-weight:bold!important;" +
-        "}" +
-        "#listcontent li.mo-invalid::before{" +
-        "content:'○'!important;position:absolute!important;left:0!important;" +
-        "color:#82829c!important;font-weight:normal!important;font-size:14px!important;" +
         "}" +
 
         /* Style label/text above inputs */
@@ -731,17 +797,26 @@
         "text-align:left!important;margin:0 0 6px 0!important;" +
         "}" +
 
+        /* Password Wrapper for eye toggle */
+        ".mo-pw-wrap{" +
+        "position:relative!important;display:flex!important;align-items:center!important;width:100%!important;margin-bottom:16px!important;" +
+        "}" +
+
         /* Style inputs */
         "#newPassword,#confirmPassword,#password,#userform input[type='password']{" +
         "height:40px!important;border:1px solid #C1CFD7!important;border-radius:4px!important;" +
-        "padding:0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
+        "padding:0 42px 0 12px!important;font-size:14px!important;font-family:'Figtree',sans-serif!important;" +
         "color:#000933!important;background:#fff!important;width:100%!important;" +
         "box-shadow:none!important;outline:none!important;box-sizing:border-box!important;" +
-        "margin-bottom:16px!important;display:block!important;" +
+        "margin-bottom:0!important;display:block!important;" +
         "}" +
         "#newPassword:focus,#confirmPassword:focus,#password:focus,#userform input[type='password']:focus{" +
         "border-color:#0A55D7!important;box-shadow:0 0 0 3px rgba(10,85,215,.12)!important;" +
         "}" +
+
+        /* Padding adjustment for error + eye toggle icons */
+        ".mo-pw-wrap .mo-input-error{padding-right:64px!important;}" +
+        "[dir='rtl'] .mo-pw-wrap .mo-input-error{padding-right:12px!important;padding-left:64px!important;}" +
 
         /* Submit button styling */
         "#validate,#submit{" +
@@ -769,22 +844,36 @@
     var newPasswordInput = document.getElementById("newPassword") || fpForm.querySelector("input[name='password']");
     var confirmPasswordInput = document.getElementById("confirmPassword") || fpForm.querySelector("input[name='confirmPassword']");
 
-    /* Update title to LOGIN DETAILS with close x button */
+    /* Update title to RESET PASSWORD with close x button */
     var h3 = document.querySelector(".login-header");
-    if (h3 && !document.getElementById("mo-cp-close")) {
-      h3.textContent = "LOGIN DETAILS";
+    if (h3) {
+      var titleTextNode = null;
+      for (var i = 0; i < h3.childNodes.length; i++) {
+        var node = h3.childNodes[i];
+        if (node.nodeType === 3) {
+          titleTextNode = node;
+          break;
+        }
+      }
+      if (titleTextNode) {
+        titleTextNode.nodeValue = "RESET PASSWORD";
+      } else {
+        h3.insertBefore(document.createTextNode("RESET PASSWORD"), h3.firstChild);
+      }
       
-      var closeBtn = document.createElement("a");
-      closeBtn.id = "mo-cp-close";
-      closeBtn.href = "login";
-      closeBtn.innerHTML = "&times;";
-      closeBtn.style.color = "#a0aab6";
-      closeBtn.style.textDecoration = "none";
-      closeBtn.style.fontSize = "24px";
-      closeBtn.style.fontWeight = "400";
-      closeBtn.style.cursor = "pointer";
-      closeBtn.style.lineHeight = "1";
-      h3.appendChild(closeBtn);
+      if (!document.getElementById("mo-cp-close")) {
+        var closeBtn = document.createElement("a");
+        closeBtn.id = "mo-cp-close";
+        closeBtn.href = "login";
+        closeBtn.innerHTML = "&times;";
+        closeBtn.style.color = "#a0aab6";
+        closeBtn.style.textDecoration = "none";
+        closeBtn.style.fontSize = "24px";
+        closeBtn.style.fontWeight = "400";
+        closeBtn.style.cursor = "pointer";
+        closeBtn.style.lineHeight = "1";
+        h3.appendChild(closeBtn);
+      }
     }
 
     /* Add * to labels */
@@ -820,32 +909,91 @@
       newPasswordCol.parentNode.insertBefore(requirementsBlock, newPasswordCol.nextSibling);
     }
 
-    /* Append strength meter */
-    if (requirementsBlock && !document.getElementById("mo-strength-container")) {
-      var strengthContainer = document.createElement("div");
-      strengthContainer.id = "mo-strength-container";
-      strengthContainer.style.width = "100%";
-      strengthContainer.style.boxSizing = "border-box";
-      strengthContainer.innerHTML =
-        '<div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0 6px 0; width:100%;">' +
-          '<span id="mo-strength-label" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#3c515d;">Password strength</span>' +
-          '<span id="mo-strength-value" style="font-family:\'Figtree\',sans-serif; font-size:13px; font-weight:700; color:#a0aab6;">Weak</span>' +
-        '</div>' +
-        '<div id="mo-strength-bar-wrap" style="height:4px; background:#e0e7ef; border-radius:2px; overflow:hidden; width:100%;">' +
-          '<div id="mo-strength-bar-fill" style="height:100%; width:0%; background:#e0e7ef; transition: width 0.3s ease, background-color 0.3s ease;"></div>' +
-        '</div>';
-      requirementsBlock.appendChild(strengthContainer);
+    /* Wrap new password in .mo-pw-wrap for eye toggle */
+    if (newPasswordInput && !newPasswordInput.parentNode.classList.contains("mo-pw-wrap")) {
+      var wrap = document.createElement("div");
+      wrap.className = "mo-pw-wrap";
+      newPasswordInput.parentNode.insertBefore(wrap, newPasswordInput);
+      wrap.appendChild(newPasswordInput);
+      newPasswordInput.setAttribute("placeholder", "Password");
+
+      // Append eye toggle
+      var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+      var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      var eyeBtn = document.createElement("button");
+      eyeBtn.type = "button"; eyeBtn.className = "mo-eye";
+      eyeBtn.setAttribute("aria-label", "Toggle password visibility");
+      eyeBtn.innerHTML = EYE_OFF;
+      eyeBtn.addEventListener("click", function () {
+        var show = newPasswordInput.type === "password";
+        newPasswordInput.type = show ? "text" : "password";
+        eyeBtn.innerHTML = show ? EYE_ON : EYE_OFF;
+      });
+      wrap.appendChild(eyeBtn);
     }
 
-    /* Dynamic Validation Function */
+    /* Wrap confirm password in .mo-pw-wrap for eye toggle */
+    if (confirmPasswordInput && !confirmPasswordInput.parentNode.classList.contains("mo-pw-wrap")) {
+      var wrap = document.createElement("div");
+      wrap.className = "mo-pw-wrap";
+      confirmPasswordInput.parentNode.insertBefore(wrap, confirmPasswordInput);
+      wrap.appendChild(confirmPasswordInput);
+      confirmPasswordInput.setAttribute("placeholder", "Password");
+
+      // Append eye toggle
+      var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+      var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      var eyeBtn = document.createElement("button");
+      eyeBtn.type = "button"; eyeBtn.className = "mo-eye";
+      eyeBtn.setAttribute("aria-label", "Toggle password visibility");
+      eyeBtn.innerHTML = EYE_OFF;
+      eyeBtn.addEventListener("click", function () {
+        var show = confirmPasswordInput.type === "password";
+        confirmPasswordInput.type = show ? "text" : "password";
+        eyeBtn.innerHTML = show ? EYE_ON : EYE_OFF;
+      });
+      wrap.appendChild(eyeBtn);
+    }
+
+    /* Helper text and Error message injection */
+    var newPasswordWrap = newPasswordInput ? newPasswordInput.closest(".mo-pw-wrap") : null;
+    if (newPasswordWrap && !document.getElementById("mo-cp-helper-text")) {
+      // Error text container
+      var errorText = document.createElement("div");
+      errorText.id = "mo-cp-error-text";
+      errorText.className = "mo-error-text";
+      errorText.style.fontFamily = "'Figtree', sans-serif";
+      errorText.style.fontSize = "12px";
+      errorText.style.color = "#ef2f2f";
+      errorText.style.lineHeight = "1.5";
+      errorText.style.marginTop = "-10px";
+      errorText.style.marginBottom = "16px";
+      errorText.style.textAlign = "left";
+      errorText.style.display = "none";
+
+      // Helper text
+      var helper = document.createElement("div");
+      helper.id = "mo-cp-helper-text";
+      helper.style.fontFamily = "'Figtree', sans-serif";
+      helper.style.fontSize = "12px";
+      helper.style.color = "#6b7a8d";
+      helper.style.lineHeight = "1.5";
+      helper.style.marginTop = "-10px";
+      helper.style.marginBottom = "16px";
+      helper.style.textAlign = "left";
+      helper.style.display = "block";
+      helper.textContent = "8–50 characters, including 1 uppercase, 1 number, and 1 symbol (!@#$.%^&*_-). Must not contain more than 2 consecutive characters from your name, username, or email.";
+      
+      newPasswordWrap.parentNode.insertBefore(errorText, newPasswordWrap.nextSibling);
+      newPasswordWrap.parentNode.insertBefore(helper, newPasswordWrap.nextSibling);
+    }
+
+    /* Dynamic Validation Function (keeps list updated behind the scenes for validation checks) */
     function updatePasswordRequirementsAndStrength() {
       if (!newPasswordInput) return;
       var val = newPasswordInput.value || "";
 
       var listItems = document.querySelectorAll("#listcontent li");
-      var score = 0;
-      var totalRules = listItems.length || 1;
-
       listItems.forEach(function (li) {
         var txt = li.textContent.trim().toLowerCase();
         var isValid = false;
@@ -881,57 +1029,33 @@
         if (isValid) {
           li.classList.add("mo-valid");
           li.classList.remove("mo-invalid");
-          score++;
         } else {
           li.classList.add("mo-invalid");
           li.classList.remove("mo-valid");
         }
       });
-
-      var strengthValue = document.getElementById("mo-strength-value");
-      var strengthFill = document.getElementById("mo-strength-bar-fill");
-      if (strengthValue && strengthFill) {
-        if (val.length === 0) {
-          strengthValue.textContent = "Weak";
-          strengthValue.style.color = "#a0aab6";
-          strengthFill.style.width = "0%";
-          strengthFill.style.backgroundColor = "#e0e7ef";
-        } else {
-          var pct = Math.round((score / totalRules) * 100);
-          strengthFill.style.width = pct + "%";
-
-          if (pct < 40) {
-            strengthValue.textContent = "Weak";
-            strengthValue.style.color = "#e02020";
-            strengthFill.style.backgroundColor = "#e02020";
-          } else if (pct < 70) {
-            strengthValue.textContent = "Medium";
-            strengthValue.style.color = "#ff9800";
-            strengthFill.style.backgroundColor = "#ff9800";
-          } else if (pct < 100) {
-            strengthValue.textContent = "Strong";
-            strengthValue.style.color = "#0A55D7";
-            strengthFill.style.backgroundColor = "#0A55D7";
-          } else {
-            strengthValue.textContent = "Sufficient";
-            strengthValue.style.color = "#2e7d32";
-            strengthFill.style.backgroundColor = "#2e7d32";
-          }
-        }
-      }
     }
 
     /* Bind events for dynamic updates */
     if (newPasswordInput && !newPasswordInput.dataset.moListener) {
       newPasswordInput.dataset.moListener = "true";
       newPasswordInput.addEventListener("input", updatePasswordRequirementsAndStrength);
+      newPasswordInput.addEventListener("input", clearCpError);
       updatePasswordRequirementsAndStrength();
     }
+    if (confirmPasswordInput && !confirmPasswordInput.dataset.moListener) {
+      confirmPasswordInput.dataset.moListener = "true";
+      confirmPasswordInput.addEventListener("input", clearCpError);
+    }
 
-    /* Update button text to SAVE */
+    /* Update button text to NEXT → */
     var saveBtn = document.getElementById("validate") || document.getElementById("submit");
     if (saveBtn) {
-      saveBtn.value = "SAVE";
+      if (saveBtn.tagName === "INPUT") {
+        saveBtn.value = "NEXT \u2192";
+      } else {
+        saveBtn.innerHTML = 'NEXT <span style="margin-left: 6px;">&rarr;</span>';
+      }
     }
 
     /* Disable native HTML5 validation bubbles/hovers */
@@ -946,32 +1070,78 @@
       confirmPasswordInput.removeAttribute("title");
     }
 
-    /* Shift the error display container (#pwd_strength) below the confirm password input */
+    /* Hide original error container #pwd_strength */
     var pwdStrengthDiv = document.getElementById("pwd_strength");
-    if (confirmPasswordInput && pwdStrengthDiv && pwdStrengthDiv.parentNode !== confirmPasswordInput.parentNode) {
-      confirmPasswordInput.parentNode.appendChild(pwdStrengthDiv);
-      pwdStrengthDiv.style.fontFamily = "'Figtree', sans-serif";
-      pwdStrengthDiv.style.fontSize = "13px";
-      pwdStrengthDiv.style.fontWeight = "700";
-      pwdStrengthDiv.style.textAlign = "left";
-      pwdStrengthDiv.style.marginTop = "6px";
-      pwdStrengthDiv.style.marginBottom = "0";
-      pwdStrengthDiv.style.display = "block";
+    if (pwdStrengthDiv) {
+      pwdStrengthDiv.style.display = "none";
+    }
+
+    /* Error UI helper functions */
+    function showCpError(msg) {
+      var errEl = document.getElementById("mo-cp-error-text");
+      var helpEl = document.getElementById("mo-cp-helper-text");
+      
+      // Highlight inputs
+      if (newPasswordInput) newPasswordInput.classList.add("mo-input-error");
+      if (confirmPasswordInput) confirmPasswordInput.classList.add("mo-input-error");
+
+      // Add red cross icons inside wraps if not already present
+      [newPasswordInput, confirmPasswordInput].forEach(function (inp) {
+        if (inp) {
+          var wrap = inp.closest(".mo-pw-wrap");
+          if (wrap && !wrap.querySelector(".mo-error-icon")) {
+            var icon = document.createElement("span");
+            icon.className = "mo-error-icon";
+            icon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>';
+            wrap.appendChild(icon);
+          }
+        }
+      });
+
+      // Show message and toggle visibility
+      if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = "block";
+      }
+      if (helpEl) {
+        helpEl.style.display = "none";
+      }
+    }
+
+    function clearCpError() {
+      var errEl = document.getElementById("mo-cp-error-text");
+      var helpEl = document.getElementById("mo-cp-helper-text");
+
+      // Remove highlighting
+      if (newPasswordInput) newPasswordInput.classList.remove("mo-input-error");
+      if (confirmPasswordInput) confirmPasswordInput.classList.remove("mo-input-error");
+
+      // Remove red cross icons
+      document.querySelectorAll(".mo-pw-wrap .mo-error-icon").forEach(function (ico) {
+        ico.remove();
+      });
+
+      // Hide message and show helper text
+      if (errEl) {
+        errEl.textContent = "";
+        errEl.style.display = "none";
+      }
+      if (helpEl) {
+        helpEl.style.display = "block";
+      }
     }
 
     /* Bind custom validation on submit to show neat errors instead of bubbles */
     if (form && !form.dataset.moValidationBound) {
       form.dataset.moValidationBound = "true";
       form.addEventListener("submit", function (e) {
+        clearCpError();
         var val = newPasswordInput ? newPasswordInput.value : "";
         var confirmVal = confirmPasswordInput ? confirmPasswordInput.value : "";
-        var pwdStrengthDiv = document.getElementById("pwd_strength");
 
         if (!val) {
           e.preventDefault();
-          if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>New password is required.</font>";
-          }
+          showCpError("New password is required.");
           if (newPasswordInput) newPasswordInput.focus();
           return;
         }
@@ -979,24 +1149,16 @@
         var invalidItems = document.querySelectorAll("#listcontent li.mo-invalid");
         if (invalidItems.length > 0) {
           e.preventDefault();
-          if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>Please satisfy all password requirements.</font>";
-          }
+          showCpError("Please satisfy all password requirements.");
           if (newPasswordInput) newPasswordInput.focus();
           return;
         }
 
         if (val !== confirmVal) {
           e.preventDefault();
-          if (pwdStrengthDiv) {
-            pwdStrengthDiv.innerHTML = "<font style='color:rgb(239, 47, 47);'>The two passwords must match.</font>";
-          }
+          showCpError("The password don't match. Please try again");
           if (confirmPasswordInput) confirmPasswordInput.focus();
           return;
-        }
-
-        if (pwdStrengthDiv) {
-          pwdStrengthDiv.innerHTML = "";
         }
       });
     }
@@ -1016,6 +1178,7 @@
     if (isLogin) {
       applyEmailStep();
       applyPasswordStep();
+      handleLoginErrors();
       forceHide();
 
       /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
@@ -1050,7 +1213,7 @@
     var isOtp = checkIsOtp();
     var isChangePass = checkIsChangePass();
 
-    if (isLogin) { forceHide(); applyPasswordStep(); }
+    if (isLogin) { forceHide(); applyPasswordStep(); handleLoginErrors(); }
     if (isForgot) { applyForgotPage(); }
     if (isOtp)    { applyOtpPage(); }
     if (isChangePass) { applyChangePasswordPage(); }
