@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    /* â”€â”€ CONFIG: hardcoded external URLs (edit here in one place) â”€â”€ */
+    /* ── CONFIG: hardcoded external URLs (edit here in one place) ── */
     var MO_URLS = {
         /* Logout page -> external account logout */
         logoutRedirect: "https://dev.account.bouwmaat.nl/account/logout?returnTo=https://dev.bouwmaat.nl/account/logout",
@@ -24,13 +24,13 @@
        bookmarked SSO link directly and the backend finds no account: the URL
        then carries is_exist=false, and the register-error message
        (login.register.* copy) is shown under the email field without any form
-       submission. STRICT VALUE CHECK â€” only the exact value "false" triggers
+       submission. STRICT VALUE CHECK — only the exact value "false" triggers
        it; param absent or any other value keeps the generic error prompts
        (showing the Bouwmaat message to everyone would cause confusion). */
     var MO_REGISTER_ERROR_PARAM = "is_exist";
     var MO_REGISTER_ERROR_VALUE = "false";
 
-    /* White right-arrow as an inline SVG data URI â€” used as a background-image
+    /* White right-arrow as an inline SVG data URI — used as a background-image
        inside the brand submit buttons. <input> buttons can't hold a child <i>
        or use ::after, so the icon lives in the button's background instead. */
     var MO_ARROW_BG = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='4' y1='12' x2='20' y2='12'/%3E%3Cpolyline points='13 5 20 12 13 19'/%3E%3C/svg%3E\")";
@@ -44,9 +44,9 @@
             el.style.setProperty('display', 'flex', 'important');
         });
 
-    /* â”€â”€ GLOBAL: brand-colored loading spinner (all pages, all viewports) â”€â”€
+    /* ── GLOBAL: brand-colored loading spinner (all pages, all viewports) ──
        The platform loader (.loadingbar) is already a pure CSS border-spinner,
-       just in orange (#ff972f) â€” recolor its borders to the brand blue. The
+       just in orange (#ff972f) — recolor its borders to the brand blue. The
        spin animation, size and shape stay the platform's own. Injected once,
        unconditionally, so it applies on every IdP page at any screen size. */
     if (!document.getElementById("mo-loader-css")) {
@@ -62,11 +62,11 @@
         document.head.appendChild(moLoaderSt);
     }
 
-    /* â”€â”€ PAGE DETECTION HELPERS â”€â”€ */
+    /* ── PAGE DETECTION HELPERS ── */
     function checkIsLogin() {
         var path = window.location.pathname.toLowerCase();
         if (path.indexOf("/moas/login") !== -1 || path.indexOf("/moas/idp/userlogin") !== -1 ||
-            path.indexOf("/moas/validatepassword") !== -1) {   /* failed password submit re-render â€” same page as userlogin */
+            path.indexOf("/moas/validatepassword") !== -1) {   /* failed password submit re-render — same page as userlogin */
             return true;
         }
         return !!document.getElementById("enduserloginform") || !!document.getElementById("idploginform");
@@ -135,20 +135,20 @@
     }
 
 
-    /* â”€â”€ LOGOUT PAGE: auto-redirect â”€â”€ */
+    /* ── LOGOUT PAGE: auto-redirect ── */
     function applyLogoutPage() {
         if (!checkIsLogout()) return;
         $('.d-flex.justify-content-center.align-items-center.h-25').addClass('d-none')
         window.location.replace(MO_URLS.logoutRedirect);
     }
 
-    /* â”€â”€ ENDUSER DASHBOARD PAGE (/moas/enduserwelcome) â”€â”€ */
+    /* ── ENDUSER DASHBOARD PAGE (/moas/enduserwelcome) ── */
     function applyEnduserDashboard() {
         if (!checkIsEnduserDashboard()) return;
         window.location.replace(MO_URLS.dashboardRedirect);
     }
 
-    /* â”€â”€ PASSWORD SENT MESSAGE PAGE (idp/showpasswordsentmessage) â”€â”€ */
+    /* ── PASSWORD SENT MESSAGE PAGE (idp/showpasswordsentmessage) ── */
     function applyPasswordSentMessage() {
         if (!checkIsPasswordSentMessage()) return;
 
@@ -166,13 +166,13 @@
         });
 
         /* Full-height centering for the React layout wrapper.
-           Only set when not already set â€” otherwise the style mutation
+           Only set when not already set — otherwise the style mutation
            retriggers the observer and creates an infinite loop. */
         $('.d-flex.flex-column.align-items-center.justify-content-center').each(function () {
             if (this.style.height !== "100vh") this.style.height = "100vh";
         });
 
-        /* Heading text localization. Guard compares TRIMMED text â€” the
+        /* Heading text localization. Guard compares TRIMMED text — the
            server-rendered <h4> carries newlines/indentation around the label, so
            a raw textContent comparison never matches and rewrites every observer
            pass (the old "stuck on loading" loop). After our write textContent is
@@ -183,13 +183,13 @@
         }
 
         /* Point "Go back to Login Page" at the broker login (dashboard) URL.
-           (Not a translation â€” kept active.) */
+           (Not a translation — kept active.) */
         var goBackLink = document.getElementById("go-back-link");
         if (goBackLink && goBackLink.getAttribute("href") !== MO_URLS.dashboardRedirect) {
             goBackLink.setAttribute("href", MO_URLS.dashboardRedirect);
         }
 
-        /* Go-back link label localization (trimmed-guard, loop-safe â€” same
+        /* Go-back link label localization (trimmed-guard, loop-safe — same
            pattern as the heading above). */
         $('#go-back-link').each(function () {
             if (this.textContent.trim() !== tr("goback.login")) this.textContent = tr("goback.login");
@@ -203,7 +203,7 @@
            mask formats like "am****ar@gm***.com". If parsing ever fails (no
            email-shaped string in the message), the old "xxxxxx@xxxx" placeholder
            is the fallback so the raw EMAIL token never shows. Only spans that
-           already carry text are touched â€” an empty box must keep falling
+           already carry text are touched — an empty box must keep falling
            through to the "Something went wrong" handler below. Loop-safe: after
            our write the masked email is still in the text, so the next tick
            parses the same value, builds the same target, and the
@@ -213,7 +213,7 @@
             var psmCur = this.textContent.trim();
             if (!psmCur) return;
             var psmEmailMatch = psmCur.match(/[\w.*+-]+@[\w.*-]+\.[\w.*-]+/);
-            /* trailing dots stripped â€” the domain part grabs the sentence period */
+            /* trailing dots stripped — the domain part grabs the sentence period */
             var psmEmail = psmEmailMatch ? psmEmailMatch[0].replace(/\.+$/, "") : "xxxxxx@xxxx";
             var psmTarget = tr("psm.alert").replace(/['"]?EMAIL['"]?/, psmEmail);
             if (psmCur !== psmTarget) this.textContent = psmTarget;
@@ -240,7 +240,7 @@
             }
         }
 
-        /* Page-specific styling (inject once) â€” makes this page match /login:
+        /* Page-specific styling (inject once) — makes this page match /login:
            carded wrapper, left-aligned bold heading, clean green message box,
            and styled links. */
         if (!document.getElementById("mo-psm-css")) {
@@ -304,9 +304,9 @@
         }
     }
 
-    /* â”€â”€ ERROR DETECTION HELPER â”€â”€ */
+    /* ── ERROR DETECTION HELPER ── */
     /* Detects the server-rendered error banner (#error-alert-message).
-       The wrapper structure stays constant â€” only the message text changes:
+       The wrapper structure stays constant — only the message text changes:
          #error-alert-message > ul.errorMessage > li > span  ("...message...")
        Returns true when a non-empty error message is present. */
     function errorOnPage() {
@@ -321,10 +321,10 @@
         return true;
     }
 
-    /* â”€â”€ INJECT FONT AND CSS â”€â”€ */
+    /* ── INJECT FONT AND CSS ── */
     function injectFontAndCss() {
 
-        /* â”€â”€ FONT â”€â”€ */
+        /* ── FONT ── */
         if (!document.getElementById("mo-font")) {
             var lk = document.createElement("link");
             lk.id = "mo-font"; lk.rel = "stylesheet";
@@ -332,10 +332,10 @@
             document.head.appendChild(lk);
         }
 
-        /* â”€â”€ CSS â”€â”€ */
+        /* ── CSS ── */
         if (!document.getElementById("mo-css")) {
             var css =
-                /* Page bg â€” keep full viewport height so flex centering works */
+                /* Page bg — keep full viewport height so flex centering works */
                 "#login-main-body{" +
                 "background:#eef1f7!important;" +
                 "font-family:'Figtree',sans-serif!important;" +
@@ -349,11 +349,11 @@
                 "}" +
                 "#login-body > br,#login-main-body > br{display:none!important;}" +
 
-                /* Error messages â€” uniform 12px, medium weight */
+                /* Error messages — uniform 12px, medium weight */
                 ".error-message{font-size:12px!important;color:#E91616!important;font-weight:500!important;}" +
                 ".border-danger{border-color:#E91616!important;}" +
 
-                /* Logo â€” hidden */
+                /* Logo — hidden */
                 "#login-header{display:none!important;}" +
 
                 /* Card */
@@ -382,11 +382,11 @@
                    form is never hidden. */
                 "#enduserloginform .w-75.px-4:has(.row.justify-content-center),#idploginform .w-75.px-4:has(.row.justify-content-center){display:none!important;}" +
 
-                /* LOG IN heading â€” top LEFT */
+                /* LOG IN heading — top LEFT */
                 "#mo-title{display:block;font-family:'Figtree',sans-serif;font-size:24px;font-weight:800;" +
                 "color:#000933;margin-bottom:12px;text-align:left;}" +
 
-                /* Labels â€” left aligned */
+                /* Labels — left aligned */
                 ".mo-lbl{display:block;color:#3c515d;font-size:14px;font-weight:700;padding:0 0 4px;" +
                 "font-family:'Figtree',sans-serif;text-align:left;}" +
                 ".mo-lbl .mo-req{color:#e02020;margin-left:2px;}" +
@@ -418,7 +418,7 @@
                 ".mo-eye:hover{color:#000933;}" +
                 ".mo-eye svg{width:20px;height:20px;pointer-events:none;}" +
 
-                /* Forgot link row â€” right aligned */
+                /* Forgot link row — right aligned */
                 "#mo-bottom{display:flex;align-items:center;justify-content:flex-end;margin:16px 0 20px;width:100%;}" +
                 "#mo-forgot{font-size:13px;font-weight:500;color:#0A55D7;text-decoration:none;font-family:'Figtree',sans-serif;}" +
                 "#mo-forgot:hover{text-decoration:underline;}" +
@@ -428,7 +428,7 @@
                 "font-size:14px;color:#6b7a8d;background:#f5f7fa;display:flex;align-items:center;" +
                 "font-family:'Figtree',sans-serif;box-sizing:border-box;width:100%;cursor:default;}" +
 
-                /* Login button â€” left-aligned */
+                /* Login button — left-aligned */
                 "#loginbutton{" +
                 "display:inline-flex!important;align-items:center!important;justify-content:center!important;" +
                 "gap:8px!important;min-height:40px!important;padding:8px 20px!important;" +
@@ -440,7 +440,7 @@
                 "background-repeat:no-repeat!important;background-position:right 18px center!important;background-size:15px 15px!important;" +
                 "}" +
                 "#loginbutton:hover{background-color:#0844b0!important;}" +
-                /* button row â€” left align the submit button */
+                /* button row — left align the submit button */
                 "#enduserloginform .row div:has(#loginbutton),#idploginform .row div:has(#loginbutton){text-align:left!important;display:block!important;}" +
 
                 /* SSO register-error message (param-driven, under the email field) */
@@ -456,7 +456,7 @@
                 "#mo-register-helper a{color:#0A55D7!important;text-decoration:none!important;font-weight:500!important;}" +
                 "#mo-register-helper a:hover{text-decoration:underline!important;}" +
 
-                /* Mobile â€” full-bleed card: no centering, no border/shadow, flush left/right */
+                /* Mobile — full-bleed card: no centering, no border/shadow, flush left/right */
                 "@media(max-width:576px){" +
                 "#login-main-body{background:#ffffff!important;" +
                 "align-items:normal!important;justify-content:flex-start!important;" +
@@ -487,7 +487,7 @@
         }
     }
 
-    /* â”€â”€ HELPERS â”€â”€ */
+    /* ── HELPERS ── */
     function getForgotHref() {
         var a = document.querySelector("a[href*='forgotpassword'], a[href*='resetpassword']");
         return a ? a.href : "#";
@@ -496,7 +496,7 @@
     /* Set a submit button's label. The trailing white right-arrow is supplied
        by CSS (background-image: MO_ARROW_BG) on the button selectors, so the
        look is identical whether the button is an <input> or a <button>.
-       Idempotent â€” safe to call on every observer pass. */
+       Idempotent — safe to call on every observer pass. */
     function setBtnArrowLabel(btn, label) {
         if (!btn) return;
         if (btn.tagName === "INPUT") {
@@ -523,12 +523,12 @@
         }
 
         /* Priority: signals the SERVER controls beat the client-side dropdown.
-             1. ?request_locale â€” authoritative on the /openidsso entry page.
-             2. <html lang>     â€” set by the server from request_locale and, unlike
+             1. ?request_locale — authoritative on the /openidsso entry page.
+             2. <html lang>     — set by the server from request_locale and, unlike
                 the query param, survives the 302 -> /userlogin redirect.
-             3. #languageSelect â€” only a UI widget; its default may not reflect the
+             3. #languageSelect — only a UI widget; its default may not reflect the
                 locale actually applied, so it ranks last among live signals.
-             4. localStorage    â€” final fallback so a resolved locale persists onto
+             4. localStorage    — final fallback so a resolved locale persists onto
                 pages that expose none of the above. */
         var sel = document.getElementById("languageSelect");
         var lang =
@@ -542,10 +542,10 @@
         return lang;
     }
 
-    /* â”€â”€ TRANSLATIONS â”€â”€
+    /* ── TRANSLATIONS ──
        Keyed by locale code (matches #languageSelect option values + mo_locale).
        tr(key) resolves against the current mo_locale, falling back to English,
-       then to the raw key if nothing is found. Structural glyphs (â†’, *) are
+       then to the raw key if nothing is found. Structural glyphs (→, *) are
        appended in code, never stored here. */
     var TRANSLATIONS = {
         en: {
@@ -558,7 +558,7 @@
             "forgot.password.link": "Forgot Password",
             "reset.password": "RESET PASSWORD",
             "reset.password.subtext": "We will send you an email with instructions on how to recover it",
-            "forgot.page.helper": "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Canâ€™t figure it out?",
+            "forgot.page.helper": "Not receiving an email to reset your password? Then the e-mail address used is not known to us. Can’t figure it out?",
             "forgot.page.helper.link": "Contact customer service",
             "login.register.helper": "Please use your Bouwmaat Pass to register. If you experience any issues, please contact {link}.",
             "login.register.link": "Customer Service",
@@ -613,54 +613,54 @@
             "password.field.label": "Passwort",
             "password.field.placeholder": "Passwort",
             "forgot.password.link": "Passwort vergessen",
-            "reset.password": "PASSWORT ZURÃœCKSETZEN",
+            "reset.password": "PASSWORT ZURÜCKSETZEN",
             "reset.password.subtext": "Wir senden Ihnen eine E-Mail mit Anweisungen zur Wiederherstellung",
-            "forgot.page.helper": "Sie erhalten keine E-Mail zum ZurÃ¼cksetzen Ihres Passworts? Dann ist die verwendete E-Mail-Adresse uns nicht bekannt. Kommen Sie nicht weiter?",
+            "forgot.page.helper": "Sie erhalten keine E-Mail zum Zurücksetzen Ihres Passworts? Dann ist die verwendete E-Mail-Adresse uns nicht bekannt. Kommen Sie nicht weiter?",
             "forgot.page.helper.link": "Kundenservice kontaktieren",
             "login.register.helper": "Bitte verwenden Sie Ihren Bouwmaat-Pass, um sich zu registrieren. Bei Problemen wenden Sie sich bitte an den {link}.",
             "login.register.link": "Kundenservice",
             "login.createacct.helper": "Wenn Sie noch kein Online-Konto haben, erstellen Sie Ihr Konto bitte {link}.",
             "login.createacct.link": "hier",
             "next.button": "WEITER",
-            "otp.page.title": "IDENTITÃ„T BESTÃ„TIGEN",
+            "otp.page.title": "IDENTITÄT BESTÄTIGEN",
             "otp.field.label": "OTP hier eingeben",
             "otp.field.placeholder": "OTP-Nummer",
-            "otp.verify.button": "BESTÃ„TIGEN",
+            "otp.verify.button": "BESTÄTIGEN",
             "otp.cancel.button": "ABBRECHEN",
-            "otp.alert": "Der OTP wurde an {Email} gesendet. Bitte geben Sie den erhaltenen OTP zur BestÃ¤tigung ein.",
+            "otp.alert": "Der OTP wurde an {Email} gesendet. Bitte geben Sie den erhaltenen OTP zur Bestätigung ein.",
             "otp.resend.link": "Keinen OTP erhalten? Klicken Sie hier, um den OTP erneut zu senden",
             "otp.resent.message": "OTP gesendet. Klicken Sie erneut, falls Sie ihn nicht erhalten haben.",
-            "otp.resend.timer": "Sie kÃ¶nnen in {X} Sekunden einen neuen OTP anfordern.",
-            "otp.error.invalid": "UngÃ¼ltiger OTP eingegeben. Bitte versuchen Sie es erneut. Sie haben noch {X} Versuch(e) Ã¼brig.",
-            "changepw.title": "PASSWORT ZURÃœCKSETZEN",
+            "otp.resend.timer": "Sie können in {X} Sekunden einen neuen OTP anfordern.",
+            "otp.error.invalid": "Ungültiger OTP eingegeben. Bitte versuchen Sie es erneut. Sie haben noch {X} Versuch(e) übrig.",
+            "changepw.title": "PASSWORT ZURÜCKSETZEN",
             "changepw.newpassword.label": "Neues Passwort",
-            "changepw.confirmpassword.label": "Passwort bestÃ¤tigen",
+            "changepw.confirmpassword.label": "Passwort bestätigen",
             "changepw.req.length": "{min}-{max} Zeichen",
-            "changepw.req.uppercase": "Es muss mindestens ein GroÃŸbuchstabe vorhanden sein",
+            "changepw.req.uppercase": "Es muss mindestens ein Großbuchstabe vorhanden sein",
             "changepw.req.number": "Es muss mindestens eine Ziffer vorhanden sein",
             "changepw.req.symbol": "Mindestens eines der folgenden Sonderzeichen ( {symbols} ) muss vorhanden sein",
-            "changepw.req.consecutive": "EnthÃ¤lt nicht mehr als {n} aufeinanderfolgende Zeichen von {fields}",
+            "changepw.req.consecutive": "Enthält nicht mehr als {n} aufeinanderfolgende Zeichen von {fields}",
             "changepw.field.firstname": "Vorname",
             "changepw.field.lastname": "Nachname",
             "changepw.field.username": "Benutzername",
             "changepw.field.email": "E-Mail",
-            "changepw.strength.label": "PasswortstÃ¤rke",
+            "changepw.strength.label": "Passwortstärke",
             "changepw.strength.weak": "Schwach",
             "changepw.strength.fair": "Durchschnittlich",
             "changepw.strength.good": "Ausreichend",
             "changepw.strength.strong": "Perfekt!",
             "changepw.error.required": "Neues Passwort ist erforderlich.",
-            "changepw.error.requirements": "Bitte erfÃ¼llen Sie alle Passwortanforderungen.",
-            "changepw.error.mismatch": "Die PasswÃ¶rter stimmen nicht Ã¼berein. Bitte versuchen Sie es erneut.",
+            "changepw.error.requirements": "Bitte erfüllen Sie alle Passwortanforderungen.",
+            "changepw.error.mismatch": "Die Passwörter stimmen nicht überein. Bitte versuchen Sie es erneut.",
             "changepw.expired.title": "Passwort-Link abgelaufen",
-            "changepw.expired.message": "Ihr Link zum ZurÃ¼cksetzen des Passworts ist abgelaufen. Bitte verwenden Sie einen gÃ¼ltigen Link, um Ihr Passwort zurÃ¼ckzusetzen.",
-            "psm.title": "Passwort zurÃ¼cksetzen",
-            "psm.alert": "Sie erhalten in KÃ¼rze eine E-Mail zum ZurÃ¼cksetzen des Passworts, wenn die \"EMAIL\" mit einem Konto verknÃ¼pft ist.",
+            "changepw.expired.message": "Ihr Link zum Zurücksetzen des Passworts ist abgelaufen. Bitte verwenden Sie einen gültigen Link, um Ihr Passwort zurückzusetzen.",
+            "psm.title": "Passwort zurücksetzen",
+            "psm.alert": "Sie erhalten in Kürze eine E-Mail zum Zurücksetzen des Passworts, wenn die \"EMAIL\" mit einem Konto verknüpft ist.",
             "psm.error": "Etwas ist schiefgelaufen",
-            "goback.login": "ZurÃ¼ck zur Anmeldeseite",
-            "changepw.success.title": "Passwort erfolgreich geÃ¤ndert",
-            "changepw.success.text": "Ihr Passwort wurde erfolgreich geÃ¤ndert",
-            "login.error.invalid": "UngÃ¼ltiger Benutzername oder ungÃ¼ltiges Passwort. Sie haben noch {X} Versuch(e) Ã¼brig."
+            "goback.login": "Zurück zur Anmeldeseite",
+            "changepw.success.title": "Passwort erfolgreich geändert",
+            "changepw.success.text": "Ihr Passwort wurde erfolgreich geändert",
+            "login.error.invalid": "Ungültiger Benutzername oder ungültiges Passwort. Sie haben noch {X} Versuch(e) übrig."
         },
         it: {
             "login.page.title": "ACCEDI",
@@ -672,19 +672,19 @@
             "forgot.password.link": "Password dimenticata",
             "reset.password": "REIMPOSTA PASSWORD",
             "reset.password.subtext": "Ti invieremo un'email con le istruzioni su come recuperarla",
-            "forgot.page.helper": "Non ricevi l'email per reimpostare la password? Allora l'indirizzo email utilizzato non Ã¨ registrato. Non riesci a capire?",
+            "forgot.page.helper": "Non ricevi l'email per reimpostare la password? Allora l'indirizzo email utilizzato non è registrato. Non riesci a capire?",
             "forgot.page.helper.link": "Contatta il servizio clienti",
             "login.register.helper": "Utilizza il tuo Bouwmaat Pass per registrarti. In caso di problemi, contatta il {link}.",
             "login.register.link": "servizio clienti",
             "login.createacct.helper": "Se non hai un account online, crea il tuo account {link}.",
             "login.createacct.link": "qui",
             "next.button": "AVANTI",
-            "otp.page.title": "VERIFICA LA TUA IDENTITÃ€",
+            "otp.page.title": "VERIFICA LA TUA IDENTITÀ",
             "otp.field.label": "Inserisci qui l'OTP",
             "otp.field.placeholder": "Numero OTP",
             "otp.verify.button": "VERIFICA",
             "otp.cancel.button": "ANNULLA",
-            "otp.alert": "Il codice OTP Ã¨ stato inviato a {Email}. Inserisci il codice OTP ricevuto per confermare.",
+            "otp.alert": "Il codice OTP è stato inviato a {Email}. Inserisci il codice OTP ricevuto per confermare.",
             "otp.resend.link": "Non hai ricevuto l'OTP? Clicca qui per inviarlo di nuovo",
             "otp.resent.message": "OTP inviato. Clicca di nuovo se non l'hai ricevuto.",
             "otp.resend.timer": "Potrai richiedere un nuovo OTP tra {X} secondi.",
@@ -696,7 +696,7 @@
             "changepw.req.uppercase": "Deve essere presente almeno una lettera maiuscola",
             "changepw.req.number": "Deve essere presente almeno un numero",
             "changepw.req.symbol": "Deve essere presente almeno uno dei seguenti simboli ( {symbols} )",
-            "changepw.req.consecutive": "Non contiene piÃ¹ di {n} caratteri consecutivi di {fields}",
+            "changepw.req.consecutive": "Non contiene più di {n} caratteri consecutivi di {fields}",
             "changepw.field.firstname": "nome",
             "changepw.field.lastname": "cognome",
             "changepw.field.username": "nome utente",
@@ -706,189 +706,189 @@
             "changepw.strength.fair": "Media",
             "changepw.strength.good": "Sufficiente",
             "changepw.strength.strong": "Perfetta!",
-            "changepw.error.required": "La nuova password Ã¨ obbligatoria.",
+            "changepw.error.required": "La nuova password è obbligatoria.",
             "changepw.error.requirements": "Soddisfa tutti i requisiti della password.",
             "changepw.error.mismatch": "Le password non corrispondono. Riprova.",
             "changepw.expired.title": "Link della password scaduto",
-            "changepw.expired.message": "Il tuo link per reimpostare la password Ã¨ scaduto. Utilizza un link valido per reimpostare la password.",
+            "changepw.expired.message": "Il tuo link per reimpostare la password è scaduto. Utilizza un link valido per reimpostare la password.",
             "psm.title": "Reimposta password",
-            "psm.alert": "Riceverai a breve un'email per reimpostare la password se \"EMAIL\" Ã¨ associata a un account.",
-            "psm.error": "Qualcosa Ã¨ andato storto",
+            "psm.alert": "Riceverai a breve un'email per reimpostare la password se \"EMAIL\" è associata a un account.",
+            "psm.error": "Qualcosa è andato storto",
             "goback.login": "Torna alla pagina di accesso",
             "changepw.success.title": "Password modificata con successo",
-            "changepw.success.text": "La tua password Ã¨ stata modificata con successo",
+            "changepw.success.text": "La tua password è stata modificata con successo",
             "login.error.invalid": "Nome utente o password non validi. Hai ancora {X} tentativo/i."
         },
         ar: {
-            "login.page.title": "ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„",
-            "login.page.button": "ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„",
-            "email.field.placeholder": "Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ",
-            "email.field.label": "Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ",
-            "password.field.label": "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "password.field.placeholder": "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "forgot.password.link": "Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "reset.password": "Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "reset.password.subtext": "Ø³Ù†Ø±Ø³Ù„ Ù„Ùƒ Ø¨Ø±ÙŠØ¯Ù‹Ø§ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠÙ‹Ø§ ÙŠØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ ØªØ¹Ù„ÙŠÙ…Ø§Øª Ø­ÙˆÙ„ ÙƒÙŠÙÙŠØ© Ø§Ø³ØªØ¹Ø§Ø¯ØªÙ‡Ø§",
-            "forgot.page.helper": "Ø£Ù„Ø§ ØªØªÙ„Ù‚Ù‰ Ø¨Ø±ÙŠØ¯Ù‹Ø§ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠÙ‹Ø§ Ù„Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±ØŸ Ø¥Ø°Ù‹Ø§ Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± Ù…Ø¹Ø±ÙˆÙ Ù„Ø¯ÙŠÙ†Ø§. Ù„Ø§ ÙŠÙ…ÙƒÙ†Ùƒ Ù…Ø¹Ø±ÙØ© Ø°Ù„ÙƒØŸ",
-            "forgot.page.helper.link": "Ø§ØªØµÙ„ Ø¨Ø®Ø¯Ù…Ø© Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡",
-            "login.register.helper": "ÙŠØ±Ø¬Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø¨Ø·Ø§Ù‚Ø© Bouwmaat Ø§Ù„Ø®Ø§ØµØ© Ø¨Ùƒ Ù„Ù„ØªØ³Ø¬ÙŠÙ„. Ø¥Ø°Ø§ ÙˆØ§Ø¬Ù‡Øª Ø£ÙŠ Ù…Ø´ÙƒÙ„Ø©ØŒ ÙŠØ±Ø¬Ù‰ Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹ {link}.",
-            "login.register.link": "Ø®Ø¯Ù…Ø© Ø§Ù„Ø¹Ù…Ù„Ø§Ø¡",
-            "login.createacct.helper": "Ø¥Ø°Ø§ Ù„Ù… ÙŠÙƒÙ† Ù„Ø¯ÙŠÙƒ Ø­Ø³Ø§Ø¨ Ø¹Ø¨Ø± Ø§Ù„Ø¥Ù†ØªØ±Ù†ØªØŒ ÙŠØ±Ø¬Ù‰ Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨Ùƒ {link}.",
-            "login.createacct.link": "Ù‡Ù†Ø§",
-            "next.button": "Ø§Ù„ØªØ§Ù„ÙŠ",
-            "otp.page.title": "ØªØ­Ù‚Ù‚ Ù…Ù† Ù‡ÙˆÙŠØªÙƒ",
-            "otp.field.label": "Ø£Ø¯Ø®Ù„ Ø±Ù…Ø² OTP Ù‡Ù†Ø§",
-            "otp.field.placeholder": "Ø±Ù‚Ù… OTP",
-            "otp.verify.button": "ØªØ­Ù‚Ù‚",
-            "otp.cancel.button": "Ø¥Ù„ØºØ§Ø¡",
-            "otp.alert": "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² OTP Ø¥Ù„Ù‰ {Email}. ÙŠØ±Ø¬Ù‰ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„Ø±Ù…Ø² Ø§Ù„Ø°ÙŠ ØªÙ„Ù‚ÙŠØªÙ‡ Ù„Ù„ØªØ­Ù‚Ù‚.",
-            "otp.resend.link": "Ù„Ù… ØªØªÙ„Ù‚ÙŽÙ‘ Ø±Ù…Ø² OTPØŸ Ø§Ù†Ù‚Ø± Ù‡Ù†Ø§ Ù„Ø¥Ø¹Ø§Ø¯Ø© Ø¥Ø±Ø³Ø§Ù„Ù‡",
-            "otp.resent.message": "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² OTP. Ø§Ù†Ù‚Ø± Ù…Ø±Ø© Ø£Ø®Ø±Ù‰ Ø¥Ø°Ø§ Ù„Ù… ØªØ³ØªÙ„Ù…Ù‡.",
-            "otp.resend.timer": "ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø±Ø³Ø§Ù„ Ø±Ù…Ø² OTP Ø¬Ø¯ÙŠØ¯ Ø¨Ø¹Ø¯ {X} Ø«Ø§Ù†ÙŠØ©.",
-            "otp.error.invalid": "Ø±Ù…Ø² OTP ØºÙŠØ± ØµØ§Ù„Ø­. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø© Ù…Ø±Ø© Ø£Ø®Ø±Ù‰. Ù„Ø¯ÙŠÙƒ {X} Ù…Ø­Ø§ÙˆÙ„Ø©/Ù…Ø­Ø§ÙˆÙ„Ø§Øª Ù…ØªØ¨Ù‚ÙŠØ©.",
-            "changepw.title": "Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "changepw.newpassword.label": "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø©",
-            "changepw.confirmpassword.label": "ØªØ£ÙƒÙŠØ¯ ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "changepw.req.length": "{min}-{max} Ø­Ø±ÙÙ‹Ø§",
-            "changepw.req.uppercase": "ÙŠØ¬Ø¨ Ø£Ù† ÙŠØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ Ø­Ø±Ù ÙƒØ¨ÙŠØ± ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„",
-            "changepw.req.number": "ÙŠØ¬Ø¨ Ø£Ù† ÙŠØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ Ø±Ù‚Ù… ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„",
-            "changepw.req.symbol": "ÙŠØ¬Ø¨ Ø£Ù† ÙŠØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ ÙˆØ§Ø­Ø¯ Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„ Ù…Ù† Ø§Ù„Ø±Ù…ÙˆØ² Ø§Ù„ØªØ§Ù„ÙŠØ© ( {symbols} )",
-            "changepw.req.consecutive": "Ù„Ø§ ÙŠØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ Ø£ÙƒØ«Ø± Ù…Ù† {n} Ø£Ø­Ø±Ù Ù…ØªØªØ§Ù„ÙŠØ© Ù…Ù† {fields}",
-            "changepw.field.firstname": "Ø§Ù„Ø§Ø³Ù… Ø§Ù„Ø£ÙˆÙ„",
-            "changepw.field.lastname": "Ø§Ø³Ù… Ø§Ù„Ø¹Ø§Ø¦Ù„Ø©",
-            "changepw.field.username": "Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…",
-            "changepw.field.email": "Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ",
-            "changepw.strength.label": "Ù‚ÙˆØ© ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "changepw.strength.weak": "Ø¶Ø¹ÙŠÙØ©",
-            "changepw.strength.fair": "Ù…ØªÙˆØ³Ø·Ø©",
-            "changepw.strength.good": "ÙƒØ§ÙÙŠØ©",
-            "changepw.strength.strong": "Ù…Ù…ØªØ§Ø²Ø©!",
-            "changepw.error.required": "ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø© Ù…Ø·Ù„ÙˆØ¨Ø©.",
-            "changepw.error.requirements": "ÙŠØ±Ø¬Ù‰ Ø§Ø³ØªÙŠÙØ§Ø¡ Ø¬Ù…ÙŠØ¹ Ù…ØªØ·Ù„Ø¨Ø§Øª ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±.",
-            "changepw.error.mismatch": "ÙƒÙ„Ù…ØªØ§ Ø§Ù„Ù…Ø±ÙˆØ± ØºÙŠØ± Ù…ØªØ·Ø§Ø¨Ù‚ØªÙŠÙ†. ÙŠØ±Ø¬Ù‰ Ø§Ù„Ù…Ø­Ø§ÙˆÙ„Ø© Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.",
-            "changepw.expired.title": "Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø±Ø§Ø¨Ø· ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "changepw.expired.message": "Ø§Ù†ØªÙ‡Øª ØµÙ„Ø§Ø­ÙŠØ© Ø±Ø§Ø¨Ø· Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±. ÙŠØ±Ø¬Ù‰ Ø§Ø³ØªØ®Ø¯Ø§Ù… Ø±Ø§Ø¨Ø· ØµØ§Ù„Ø­ Ù„Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±.",
-            "psm.title": "Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±",
-            "psm.alert": "Ø³ØªØªÙ„Ù‚Ù‰ Ù‚Ø±ÙŠØ¨Ù‹Ø§ Ø¨Ø±ÙŠØ¯Ù‹Ø§ Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠÙ‹Ø§ Ù„Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø¥Ø°Ø§ ÙƒØ§Ù† \"EMAIL\" Ù…Ø±ØªØ¨Ø·Ù‹Ø§ Ø¨Ø­Ø³Ø§Ø¨.",
-            "psm.error": "Ø­Ø¯Ø« Ø®Ø·Ø£ Ù…Ø§",
-            "goback.login": "Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ ØµÙØ­Ø© ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„",
-            "changepw.success.title": "ØªÙ… ØªØºÙŠÙŠØ± ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø¨Ù†Ø¬Ø§Ø­",
-            "changepw.success.text": "ØªÙ… ØªØºÙŠÙŠØ± ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± Ø§Ù„Ø®Ø§ØµØ© Ø¨Ùƒ Ø¨Ù†Ø¬Ø§Ø­",
-            "login.error.invalid": "Ø§Ø³Ù… Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø£Ùˆ ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ± ØºÙŠØ± ØµØ§Ù„Ø­Ø©. Ù„Ø¯ÙŠÙƒ {X} Ù…Ø­Ø§ÙˆÙ„Ø©/Ù…Ø­Ø§ÙˆÙ„Ø§Øª Ù…ØªØ¨Ù‚ÙŠØ©."
+            "login.page.title": "تسجيل الدخول",
+            "login.page.button": "تسجيل الدخول",
+            "email.field.placeholder": "البريد الإلكتروني",
+            "email.field.label": "عنوان البريد الإلكتروني",
+            "password.field.label": "كلمة المرور",
+            "password.field.placeholder": "كلمة المرور",
+            "forgot.password.link": "نسيت كلمة المرور",
+            "reset.password": "إعادة تعيين كلمة المرور",
+            "reset.password.subtext": "سنرسل لك بريدًا إلكترونيًا يحتوي على تعليمات حول كيفية استعادتها",
+            "forgot.page.helper": "ألا تتلقى بريدًا إلكترونيًا لإعادة تعيين كلمة المرور؟ إذًا عنوان البريد الإلكتروني المستخدم غير معروف لدينا. لا يمكنك معرفة ذلك؟",
+            "forgot.page.helper.link": "اتصل بخدمة العملاء",
+            "login.register.helper": "يرجى استخدام بطاقة Bouwmaat الخاصة بك للتسجيل. إذا واجهت أي مشكلة، يرجى التواصل مع {link}.",
+            "login.register.link": "خدمة العملاء",
+            "login.createacct.helper": "إذا لم يكن لديك حساب عبر الإنترنت، يرجى إنشاء حسابك {link}.",
+            "login.createacct.link": "هنا",
+            "next.button": "التالي",
+            "otp.page.title": "تحقق من هويتك",
+            "otp.field.label": "أدخل رمز OTP هنا",
+            "otp.field.placeholder": "رقم OTP",
+            "otp.verify.button": "تحقق",
+            "otp.cancel.button": "إلغاء",
+            "otp.alert": "تم إرسال رمز OTP إلى {Email}. يرجى إدخال الرمز الذي تلقيته للتحقق.",
+            "otp.resend.link": "لم تتلقَّ رمز OTP؟ انقر هنا لإعادة إرساله",
+            "otp.resent.message": "تم إرسال رمز OTP. انقر مرة أخرى إذا لم تستلمه.",
+            "otp.resend.timer": "يمكنك إرسال رمز OTP جديد بعد {X} ثانية.",
+            "otp.error.invalid": "رمز OTP غير صالح. يرجى المحاولة مرة أخرى. لديك {X} محاولة/محاولات متبقية.",
+            "changepw.title": "إعادة تعيين كلمة المرور",
+            "changepw.newpassword.label": "كلمة المرور الجديدة",
+            "changepw.confirmpassword.label": "تأكيد كلمة المرور",
+            "changepw.req.length": "{min}-{max} حرفًا",
+            "changepw.req.uppercase": "يجب أن يحتوي على حرف كبير واحد على الأقل",
+            "changepw.req.number": "يجب أن يحتوي على رقم واحد على الأقل",
+            "changepw.req.symbol": "يجب أن يحتوي على واحد على الأقل من الرموز التالية ( {symbols} )",
+            "changepw.req.consecutive": "لا يحتوي على أكثر من {n} أحرف متتالية من {fields}",
+            "changepw.field.firstname": "الاسم الأول",
+            "changepw.field.lastname": "اسم العائلة",
+            "changepw.field.username": "اسم المستخدم",
+            "changepw.field.email": "البريد الإلكتروني",
+            "changepw.strength.label": "قوة كلمة المرور",
+            "changepw.strength.weak": "ضعيفة",
+            "changepw.strength.fair": "متوسطة",
+            "changepw.strength.good": "كافية",
+            "changepw.strength.strong": "ممتازة!",
+            "changepw.error.required": "كلمة المرور الجديدة مطلوبة.",
+            "changepw.error.requirements": "يرجى استيفاء جميع متطلبات كلمة المرور.",
+            "changepw.error.mismatch": "كلمتا المرور غير متطابقتين. يرجى المحاولة مرة أخرى.",
+            "changepw.expired.title": "انتهت صلاحية رابط كلمة المرور",
+            "changepw.expired.message": "انتهت صلاحية رابط إعادة تعيين كلمة المرور. يرجى استخدام رابط صالح لإعادة تعيين كلمة المرور.",
+            "psm.title": "إعادة تعيين كلمة المرور",
+            "psm.alert": "ستتلقى قريبًا بريدًا إلكترونيًا لإعادة تعيين كلمة المرور إذا كان \"EMAIL\" مرتبطًا بحساب.",
+            "psm.error": "حدث خطأ ما",
+            "goback.login": "العودة إلى صفحة تسجيل الدخول",
+            "changepw.success.title": "تم تغيير كلمة المرور بنجاح",
+            "changepw.success.text": "تم تغيير كلمة المرور الخاصة بك بنجاح",
+            "login.error.invalid": "اسم المستخدم أو كلمة المرور غير صالحة. لديك {X} محاولة/محاولات متبقية."
         },
         pt: {
             "login.page.title": "ENTRAR",
             "login.page.button": "ENTRAR",
             "email.field.placeholder": "E-mail",
-            "email.field.label": "EndereÃ§o de e-mail",
+            "email.field.label": "Endereço de e-mail",
             "password.field.label": "Senha",
             "password.field.placeholder": "Senha",
             "forgot.password.link": "Esqueceu a senha",
             "reset.password": "REDEFINIR SENHA",
-            "reset.password.subtext": "Enviaremos um e-mail com instruÃ§Ãµes sobre como recuperÃ¡-la",
-            "forgot.page.helper": "NÃ£o estÃ¡ recebendo um e-mail para redefinir sua senha? EntÃ£o o endereÃ§o de e-mail usado nÃ£o Ã© conhecido por nÃ³s. NÃ£o consegue descobrir?",
+            "reset.password.subtext": "Enviaremos um e-mail com instruções sobre como recuperá-la",
+            "forgot.page.helper": "Não está recebendo um e-mail para redefinir sua senha? Então o endereço de e-mail usado não é conhecido por nós. Não consegue descobrir?",
             "forgot.page.helper.link": "Entre em contato com o atendimento ao cliente",
             "login.register.helper": "Use o seu Bouwmaat Pass para se registrar. Se tiver algum problema, entre em contato com o {link}.",
             "login.register.link": "atendimento ao cliente",
-            "login.createacct.helper": "Se vocÃª nÃ£o tem uma conta online, crie a sua conta {link}.",
+            "login.createacct.helper": "Se você não tem uma conta online, crie a sua conta {link}.",
             "login.createacct.link": "aqui",
-            "next.button": "PRÃ“XIMO",
+            "next.button": "PRÓXIMO",
             "otp.page.title": "VERIFIQUE SUA IDENTIDADE",
             "otp.field.label": "Digite o OTP aqui",
-            "otp.field.placeholder": "NÃºmero OTP",
+            "otp.field.placeholder": "Número OTP",
             "otp.verify.button": "VERIFICAR",
             "otp.cancel.button": "CANCELAR",
-            "otp.alert": "O cÃ³digo OTP foi enviado para {Email}. Insira o cÃ³digo OTP recebido para validar.",
-            "otp.resend.link": "NÃ£o recebeu o OTP? Clique aqui para reenviar o OTP",
-            "otp.resent.message": "OTP enviado. Clique novamente caso nÃ£o o tenha recebido.",
-            "otp.resend.timer": "VocÃª poderÃ¡ enviar um novo OTP em {X} segundos.",
-            "otp.error.invalid": "OTP invÃ¡lido. Tente novamente. VocÃª tem mais {X} tentativa(s).",
+            "otp.alert": "O código OTP foi enviado para {Email}. Insira o código OTP recebido para validar.",
+            "otp.resend.link": "Não recebeu o OTP? Clique aqui para reenviar o OTP",
+            "otp.resent.message": "OTP enviado. Clique novamente caso não o tenha recebido.",
+            "otp.resend.timer": "Você poderá enviar um novo OTP em {X} segundos.",
+            "otp.error.invalid": "OTP inválido. Tente novamente. Você tem mais {X} tentativa(s).",
             "changepw.title": "REDEFINIR SENHA",
             "changepw.newpassword.label": "Nova senha",
             "changepw.confirmpassword.label": "Confirmar senha",
             "changepw.req.length": "{min}-{max} caracteres",
-            "changepw.req.uppercase": "Deve conter pelo menos uma letra maiÃºscula",
-            "changepw.req.number": "Deve conter pelo menos um nÃºmero",
-            "changepw.req.symbol": "Deve conter pelo menos um dos seguintes sÃ­mbolos ( {symbols} )",
-            "changepw.req.consecutive": "NÃ£o contÃ©m mais de {n} caracteres consecutivos de {fields}",
+            "changepw.req.uppercase": "Deve conter pelo menos uma letra maiúscula",
+            "changepw.req.number": "Deve conter pelo menos um número",
+            "changepw.req.symbol": "Deve conter pelo menos um dos seguintes símbolos ( {symbols} )",
+            "changepw.req.consecutive": "Não contém mais de {n} caracteres consecutivos de {fields}",
             "changepw.field.firstname": "nome",
             "changepw.field.lastname": "sobrenome",
-            "changepw.field.username": "nome de usuÃ¡rio",
+            "changepw.field.username": "nome de usuário",
             "changepw.field.email": "e-mail",
-            "changepw.strength.label": "ForÃ§a da senha",
+            "changepw.strength.label": "Força da senha",
             "changepw.strength.weak": "Fraca",
-            "changepw.strength.fair": "MÃ©dia",
+            "changepw.strength.fair": "Média",
             "changepw.strength.good": "Suficiente",
             "changepw.strength.strong": "Perfeita!",
-            "changepw.error.required": "A nova senha Ã© obrigatÃ³ria.",
+            "changepw.error.required": "A nova senha é obrigatória.",
             "changepw.error.requirements": "Atenda a todos os requisitos da senha.",
-            "changepw.error.mismatch": "As senhas nÃ£o coincidem. Tente novamente.",
+            "changepw.error.mismatch": "As senhas não coincidem. Tente novamente.",
             "changepw.expired.title": "Link de senha expirado",
-            "changepw.expired.message": "Seu link de redefiniÃ§Ã£o de senha expirou. Use um link vÃ¡lido para redefinir sua senha.",
+            "changepw.expired.message": "Seu link de redefinição de senha expirou. Use um link válido para redefinir sua senha.",
             "psm.title": "Redefinir senha",
-            "psm.alert": "VocÃª receberÃ¡ em breve um e-mail de redefiniÃ§Ã£o de senha se \"EMAIL\" estiver associado a uma conta.",
+            "psm.alert": "Você receberá em breve um e-mail de redefinição de senha se \"EMAIL\" estiver associado a uma conta.",
             "psm.error": "Algo deu errado",
-            "goback.login": "Voltar para a pÃ¡gina de login",
+            "goback.login": "Voltar para a página de login",
             "changepw.success.title": "Senha alterada com sucesso",
             "changepw.success.text": "Sua senha foi alterada com sucesso",
-            "login.error.invalid": "Nome de usuÃ¡rio ou senha invÃ¡lidos. VocÃª tem mais {X} tentativa(s)."
+            "login.error.invalid": "Nome de usuário ou senha inválidos. Você tem mais {X} tentativa(s)."
         },
         es: {
-            "login.page.title": "INICIAR SESIÃ“N",
-            "login.page.button": "INICIAR SESIÃ“N",
-            "email.field.placeholder": "correo electrÃ³nico",
-            "email.field.label": "Correo electrÃ³nico",
-            "password.field.label": "ContraseÃ±a",
-            "password.field.placeholder": "ContraseÃ±a",
-            "forgot.password.link": "Â¿OlvidÃ³ su contraseÃ±a?",
-            "reset.password": "RESTABLECER CONTRASEÃ‘A",
-            "reset.password.subtext": "Le enviaremos un correo electrÃ³nico con instrucciones sobre cÃ³mo recuperarla",
-            "forgot.page.helper": "Â¿No recibe un correo electrÃ³nico para restablecer su contraseÃ±a? Entonces la direcciÃ³n de correo electrÃ³nico utilizada no es conocida por nosotros. Â¿No lo puede averiguar?",
-            "forgot.page.helper.link": "Contactar con atenciÃ³n al cliente",
-            "login.register.helper": "Utilice su Bouwmaat Pass para registrarse. Si tiene algÃºn problema, pÃ³ngase en contacto con el {link}.",
-            "login.register.link": "servicio de atenciÃ³n al cliente",
+            "login.page.title": "INICIAR SESIÓN",
+            "login.page.button": "INICIAR SESIÓN",
+            "email.field.placeholder": "correo electrónico",
+            "email.field.label": "Correo electrónico",
+            "password.field.label": "Contraseña",
+            "password.field.placeholder": "Contraseña",
+            "forgot.password.link": "¿Olvidó su contraseña?",
+            "reset.password": "RESTABLECER CONTRASEÑA",
+            "reset.password.subtext": "Le enviaremos un correo electrónico con instrucciones sobre cómo recuperarla",
+            "forgot.page.helper": "¿No recibe un correo electrónico para restablecer su contraseña? Entonces la dirección de correo electrónico utilizada no es conocida por nosotros. ¿No lo puede averiguar?",
+            "forgot.page.helper.link": "Contactar con atención al cliente",
+            "login.register.helper": "Utilice su Bouwmaat Pass para registrarse. Si tiene algún problema, póngase en contacto con el {link}.",
+            "login.register.link": "servicio de atención al cliente",
             "login.createacct.helper": "Si no tiene una cuenta online, cree su cuenta {link}.",
-            "login.createacct.link": "aquÃ­",
+            "login.createacct.link": "aquí",
             "next.button": "SIGUIENTE",
             "otp.page.title": "VERIFIQUE SU IDENTIDAD",
-            "otp.field.label": "Ingrese el OTP aquÃ­",
-            "otp.field.placeholder": "NÃºmero OTP",
+            "otp.field.label": "Ingrese el OTP aquí",
+            "otp.field.placeholder": "Número OTP",
             "otp.verify.button": "VERIFICAR",
             "otp.cancel.button": "CANCELAR",
-            "otp.alert": "El cÃ³digo OTP se ha enviado a {Email}. Introduzca el cÃ³digo OTP recibido para validar.",
-            "otp.resend.link": "Â¿No recibiÃ³ el OTP? Haga clic aquÃ­ para reenviarlo",
+            "otp.alert": "El código OTP se ha enviado a {Email}. Introduzca el código OTP recibido para validar.",
+            "otp.resend.link": "¿No recibió el OTP? Haga clic aquí para reenviarlo",
             "otp.resent.message": "OTP enviado. Haga clic de nuevo si no lo ha recibido.",
-            "otp.resend.timer": "PodrÃ¡ enviar un nuevo OTP en {X} segundos.",
-            "otp.error.invalid": "OTP no vÃ¡lido. IntÃ©ntelo de nuevo. Le queda(n) {X} intento(s).",
-            "changepw.title": "RESTABLECER CONTRASEÃ‘A",
-            "changepw.newpassword.label": "Nueva contraseÃ±a",
-            "changepw.confirmpassword.label": "Confirmar contraseÃ±a",
+            "otp.resend.timer": "Podrá enviar un nuevo OTP en {X} segundos.",
+            "otp.error.invalid": "OTP no válido. Inténtelo de nuevo. Le queda(n) {X} intento(s).",
+            "changepw.title": "RESTABLECER CONTRASEÑA",
+            "changepw.newpassword.label": "Nueva contraseña",
+            "changepw.confirmpassword.label": "Confirmar contraseña",
             "changepw.req.length": "{min}-{max} caracteres",
-            "changepw.req.uppercase": "Debe contener al menos una letra mayÃºscula",
-            "changepw.req.number": "Debe contener al menos un nÃºmero",
-            "changepw.req.symbol": "Debe contener al menos uno de los siguientes sÃ­mbolos ( {symbols} )",
-            "changepw.req.consecutive": "No contiene mÃ¡s de {n} caracteres consecutivos de {fields}",
+            "changepw.req.uppercase": "Debe contener al menos una letra mayúscula",
+            "changepw.req.number": "Debe contener al menos un número",
+            "changepw.req.symbol": "Debe contener al menos uno de los siguientes símbolos ( {symbols} )",
+            "changepw.req.consecutive": "No contiene más de {n} caracteres consecutivos de {fields}",
             "changepw.field.firstname": "nombre",
             "changepw.field.lastname": "apellido",
             "changepw.field.username": "nombre de usuario",
-            "changepw.field.email": "correo electrÃ³nico",
-            "changepw.strength.label": "Seguridad de la contraseÃ±a",
-            "changepw.strength.weak": "DÃ©bil",
+            "changepw.field.email": "correo electrónico",
+            "changepw.strength.label": "Seguridad de la contraseña",
+            "changepw.strength.weak": "Débil",
             "changepw.strength.fair": "Media",
             "changepw.strength.good": "Suficiente",
-            "changepw.strength.strong": "Â¡Perfecta!",
-            "changepw.error.required": "La nueva contraseÃ±a es obligatoria.",
-            "changepw.error.requirements": "Cumpla con todos los requisitos de la contraseÃ±a.",
-            "changepw.error.mismatch": "Las contraseÃ±as no coinciden. IntÃ©ntelo de nuevo.",
-            "changepw.expired.title": "Enlace de contraseÃ±a caducado",
-            "changepw.expired.message": "Su enlace para restablecer la contraseÃ±a ha caducado. Utilice un enlace vÃ¡lido para restablecer su contraseÃ±a.",
-            "psm.title": "Restablecer contraseÃ±a",
-            "psm.alert": "RecibirÃ¡ en breve un correo electrÃ³nico para restablecer la contraseÃ±a si \"EMAIL\" estÃ¡ asociado a una cuenta.",
-            "psm.error": "Algo saliÃ³ mal",
-            "goback.login": "Volver a la pÃ¡gina de inicio de sesiÃ³n",
-            "changepw.success.title": "ContraseÃ±a cambiada correctamente",
-            "changepw.success.text": "Su contraseÃ±a se ha cambiado correctamente",
-            "login.error.invalid": "Nombre de usuario o contraseÃ±a no vÃ¡lidos. Le queda(n) {X} intento(s)."
+            "changepw.strength.strong": "¡Perfecta!",
+            "changepw.error.required": "La nueva contraseña es obligatoria.",
+            "changepw.error.requirements": "Cumpla con todos los requisitos de la contraseña.",
+            "changepw.error.mismatch": "Las contraseñas no coinciden. Inténtelo de nuevo.",
+            "changepw.expired.title": "Enlace de contraseña caducado",
+            "changepw.expired.message": "Su enlace para restablecer la contraseña ha caducado. Utilice un enlace válido para restablecer su contraseña.",
+            "psm.title": "Restablecer contraseña",
+            "psm.alert": "Recibirá en breve un correo electrónico para restablecer la contraseña si \"EMAIL\" está asociado a una cuenta.",
+            "psm.error": "Algo salió mal",
+            "goback.login": "Volver a la página de inicio de sesión",
+            "changepw.success.title": "Contraseña cambiada correctamente",
+            "changepw.success.text": "Su contraseña se ha cambiado correctamente",
+            "login.error.invalid": "Nombre de usuario o contraseña no válidos. Le queda(n) {X} intento(s)."
         },
         fr: {
             "login.page.title": "CONNEXION",
@@ -897,35 +897,35 @@
             "email.field.label": "Adresse e-mail",
             "password.field.label": "Mot de passe",
             "password.field.placeholder": "Mot de passe",
-            "forgot.password.link": "Mot de passe oubliÃ©",
-            "reset.password": "RÃ‰INITIALISER LE MOT DE PASSE",
-            "reset.password.subtext": "Nous vous enverrons un e-mail contenant des instructions pour le rÃ©cupÃ©rer",
-            "forgot.page.helper": "Vous ne recevez pas d'e-mail pour rÃ©initialiser votre mot de passe ? Alors l'adresse e-mail utilisÃ©e ne nous est pas connue. Vous ne trouvez pas ?",
+            "forgot.password.link": "Mot de passe oublié",
+            "reset.password": "RÉINITIALISER LE MOT DE PASSE",
+            "reset.password.subtext": "Nous vous enverrons un e-mail contenant des instructions pour le récupérer",
+            "forgot.page.helper": "Vous ne recevez pas d'e-mail pour réinitialiser votre mot de passe ? Alors l'adresse e-mail utilisée ne nous est pas connue. Vous ne trouvez pas ?",
             "forgot.page.helper.link": "Contacter le service client",
-            "login.register.helper": "Veuillez utiliser votre Bouwmaat Pass pour vous inscrire. En cas de problÃ¨me, veuillez contacter le {link}.",
+            "login.register.helper": "Veuillez utiliser votre Bouwmaat Pass pour vous inscrire. En cas de problème, veuillez contacter le {link}.",
             "login.register.link": "service client",
-            "login.createacct.helper": "Si vous n'avez pas de compte en ligne, veuillez crÃ©er votre compte {link}.",
+            "login.createacct.helper": "Si vous n'avez pas de compte en ligne, veuillez créer votre compte {link}.",
             "login.createacct.link": "ici",
             "next.button": "SUIVANT",
-            "otp.page.title": "VÃ‰RIFIEZ VOTRE IDENTITÃ‰",
+            "otp.page.title": "VÉRIFIEZ VOTRE IDENTITÉ",
             "otp.field.label": "Saisissez l'OTP ici",
-            "otp.field.placeholder": "NumÃ©ro OTP",
-            "otp.verify.button": "VÃ‰RIFIER",
+            "otp.field.placeholder": "Numéro OTP",
+            "otp.verify.button": "VÉRIFIER",
             "otp.cancel.button": "ANNULER",
-            "otp.alert": "Le code OTP a Ã©tÃ© envoyÃ© Ã  {Email}. Veuillez saisir le code OTP reÃ§u pour valider.",
-            "otp.resend.link": "Vous n'avez pas reÃ§u l'OTP ? Cliquez ici pour le renvoyer",
-            "otp.resent.message": "OTP envoyÃ©. Cliquez Ã  nouveau si vous ne l'avez pas reÃ§u.",
+            "otp.alert": "Le code OTP a été envoyé à {Email}. Veuillez saisir le code OTP reçu pour valider.",
+            "otp.resend.link": "Vous n'avez pas reçu l'OTP ? Cliquez ici pour le renvoyer",
+            "otp.resent.message": "OTP envoyé. Cliquez à nouveau si vous ne l'avez pas reçu.",
             "otp.resend.timer": "Vous pourrez envoyer un nouvel OTP dans {X} secondes.",
-            "otp.error.invalid": "OTP invalide. Veuillez rÃ©essayer. Il vous reste {X} tentative(s).",
-            "changepw.title": "RÃ‰INITIALISER LE MOT DE PASSE",
+            "otp.error.invalid": "OTP invalide. Veuillez réessayer. Il vous reste {X} tentative(s).",
+            "changepw.title": "RÉINITIALISER LE MOT DE PASSE",
             "changepw.newpassword.label": "Nouveau mot de passe",
             "changepw.confirmpassword.label": "Confirmer le mot de passe",
-            "changepw.req.length": "{min}-{max} caractÃ¨res",
-            "changepw.req.uppercase": "Au moins une lettre majuscule doit Ãªtre prÃ©sente",
-            "changepw.req.number": "Au moins un chiffre doit Ãªtre prÃ©sent",
-            "changepw.req.symbol": "Au moins un des symboles suivants ( {symbols} ) doit Ãªtre prÃ©sent",
-            "changepw.req.consecutive": "Ne contient pas plus de {n} caractÃ¨res consÃ©cutifs de {fields}",
-            "changepw.field.firstname": "prÃ©nom",
+            "changepw.req.length": "{min}-{max} caractères",
+            "changepw.req.uppercase": "Au moins une lettre majuscule doit être présente",
+            "changepw.req.number": "Au moins un chiffre doit être présent",
+            "changepw.req.symbol": "Au moins un des symboles suivants ( {symbols} ) doit être présent",
+            "changepw.req.consecutive": "Ne contient pas plus de {n} caractères consécutifs de {fields}",
+            "changepw.field.firstname": "prénom",
             "changepw.field.lastname": "nom de famille",
             "changepw.field.username": "nom d'utilisateur",
             "changepw.field.email": "e-mail",
@@ -935,16 +935,16 @@
             "changepw.strength.good": "Suffisant",
             "changepw.strength.strong": "Parfait !",
             "changepw.error.required": "Le nouveau mot de passe est requis.",
-            "changepw.error.requirements": "Veuillez satisfaire Ã  toutes les exigences du mot de passe.",
-            "changepw.error.mismatch": "Les mots de passe ne correspondent pas. Veuillez rÃ©essayer.",
-            "changepw.expired.title": "Lien de mot de passe expirÃ©",
-            "changepw.expired.message": "Votre lien de rÃ©initialisation du mot de passe a expirÃ©. Veuillez utiliser un lien valide pour rÃ©initialiser votre mot de passe.",
-            "psm.title": "RÃ©initialiser le mot de passe",
-            "psm.alert": "Vous recevrez sous peu un e-mail de rÃ©initialisation du mot de passe si \"EMAIL\" est associÃ© Ã  un compte.",
+            "changepw.error.requirements": "Veuillez satisfaire à toutes les exigences du mot de passe.",
+            "changepw.error.mismatch": "Les mots de passe ne correspondent pas. Veuillez réessayer.",
+            "changepw.expired.title": "Lien de mot de passe expiré",
+            "changepw.expired.message": "Votre lien de réinitialisation du mot de passe a expiré. Veuillez utiliser un lien valide pour réinitialiser votre mot de passe.",
+            "psm.title": "Réinitialiser le mot de passe",
+            "psm.alert": "Vous recevrez sous peu un e-mail de réinitialisation du mot de passe si \"EMAIL\" est associé à un compte.",
             "psm.error": "Une erreur s'est produite",
-            "goback.login": "Retour Ã  la page de connexion",
-            "changepw.success.title": "Mot de passe modifiÃ© avec succÃ¨s",
-            "changepw.success.text": "Votre mot de passe a Ã©tÃ© modifiÃ© avec succÃ¨s",
+            "goback.login": "Retour à la page de connexion",
+            "changepw.success.title": "Mot de passe modifié avec succès",
+            "changepw.success.text": "Votre mot de passe a été modifié avec succès",
             "login.error.invalid": "Nom d'utilisateur ou mot de passe invalide. Il vous reste {X} tentative(s)."
         },
         nl: {
@@ -978,9 +978,9 @@
             "changepw.newpassword.label": "Vul een nieuw wachtwoord in",
             "changepw.confirmpassword.label": "Bevestig wachtwoord",
             "changepw.req.length": "{min}-{max} karakters",
-            "changepw.req.uppercase": "Minimaal Ã©Ã©n hoofdletter",
-            "changepw.req.number": "Minimaal Ã©Ã©n cijfer",
-            "changepw.req.symbol": "Minimaal Ã©Ã©n speciaal karakter {symbols}",
+            "changepw.req.uppercase": "Minimaal één hoofdletter",
+            "changepw.req.number": "Minimaal één cijfer",
+            "changepw.req.symbol": "Minimaal één speciaal karakter {symbols}",
             "changepw.req.consecutive": "Bevat niet meer dan {n} opeenvolgende tekens van {fields}",
             "changepw.field.firstname": "voornaam",
             "changepw.field.lastname": "achternaam",
@@ -1005,118 +1005,118 @@
             "login.error.invalid": "De combinatie van e-mailadres en wachtwoord is niet geldig. Je mag het nog {X} keer proberen."
         },
         tr: {
-            "login.page.title": "GÄ°RÄ°Åž YAP",
-            "login.page.button": "GÄ°RÄ°Åž YAP",
+            "login.page.title": "GİRİŞ YAP",
+            "login.page.button": "GİRİŞ YAP",
             "email.field.placeholder": "e-posta",
             "email.field.label": "E-posta adresi",
-            "password.field.label": "Åžifre",
-            "password.field.placeholder": "Åžifre",
-            "forgot.password.link": "Åžifremi Unuttum",
-            "reset.password": "ÅžÄ°FREYÄ° SIFIRLA",
-            "reset.password.subtext": "Åžifrenizi nasÄ±l kurtaracaÄŸÄ±nÄ±za dair talimatlarÄ± iÃ§eren bir e-posta gÃ¶ndereceÄŸiz",
-            "forgot.page.helper": "Åžifrenizi sÄ±fÄ±rlamak iÃ§in bir e-posta almadÄ±nÄ±z mÄ±? O halde kullanÄ±lan e-posta adresi bizde kayÄ±tlÄ± deÄŸil. Sorunu Ã§Ã¶zemiyor musunuz?",
-            "forgot.page.helper.link": "MÃ¼ÅŸteri hizmetleriyle iletiÅŸime geÃ§in",
-            "login.register.helper": "Kaydolmak iÃ§in lÃ¼tfen Bouwmaat Pass'inizi kullanÄ±n. Herhangi bir sorun yaÅŸarsanÄ±z lÃ¼tfen {link} ile iletiÅŸime geÃ§in.",
-            "login.register.link": "mÃ¼ÅŸteri hizmetleri",
-            "login.createacct.helper": "Ã‡evrimiÃ§i bir hesabÄ±nÄ±z yoksa lÃ¼tfen hesabÄ±nÄ±zÄ± {link} oluÅŸturun.",
+            "password.field.label": "Şifre",
+            "password.field.placeholder": "Şifre",
+            "forgot.password.link": "Şifremi Unuttum",
+            "reset.password": "ŞİFREYİ SIFIRLA",
+            "reset.password.subtext": "Şifrenizi nasıl kurtaracağınıza dair talimatları içeren bir e-posta göndereceğiz",
+            "forgot.page.helper": "Şifrenizi sıfırlamak için bir e-posta almadınız mı? O halde kullanılan e-posta adresi bizde kayıtlı değil. Sorunu çözemiyor musunuz?",
+            "forgot.page.helper.link": "Müşteri hizmetleriyle iletişime geçin",
+            "login.register.helper": "Kaydolmak için lütfen Bouwmaat Pass'inizi kullanın. Herhangi bir sorun yaşarsanız lütfen {link} ile iletişime geçin.",
+            "login.register.link": "müşteri hizmetleri",
+            "login.createacct.helper": "Çevrimiçi bir hesabınız yoksa lütfen hesabınızı {link} oluşturun.",
             "login.createacct.link": "buradan",
-            "next.button": "Ä°LERÄ°",
-            "otp.page.title": "KÄ°MLÄ°ÄžÄ°NÄ°ZÄ° DOÄžRULAYIN",
+            "next.button": "İLERİ",
+            "otp.page.title": "KİMLİĞİNİZİ DOĞRULAYIN",
             "otp.field.label": "OTP'yi buraya girin",
-            "otp.field.placeholder": "OTP numarasÄ±",
-            "otp.verify.button": "DOÄžRULA",
-            "otp.cancel.button": "Ä°PTAL",
-            "otp.alert": "OTP, {Email} adresine gÃ¶nderildi. DoÄŸrulamak iÃ§in aldÄ±ÄŸÄ±nÄ±z OTP'yi girin.",
-            "otp.resend.link": "OTP almadÄ±nÄ±z mÄ±? Yeniden gÃ¶ndermek iÃ§in buraya tÄ±klayÄ±n",
-            "otp.resent.message": "OTP gÃ¶nderildi. AlmadÄ±ysanÄ±z tekrar tÄ±klayÄ±n.",
-            "otp.resend.timer": "{X} saniye sonra yeni bir OTP gÃ¶nderebilirsiniz.",
-            "otp.error.invalid": "GeÃ§ersiz OTP girildi. LÃ¼tfen tekrar deneyin. {X} deneme hakkÄ±nÄ±z kaldÄ±.",
-            "changepw.title": "ÅžÄ°FREYÄ° SIFIRLA",
-            "changepw.newpassword.label": "Yeni ÅŸifre",
-            "changepw.confirmpassword.label": "Åžifreyi onayla",
+            "otp.field.placeholder": "OTP numarası",
+            "otp.verify.button": "DOĞRULA",
+            "otp.cancel.button": "İPTAL",
+            "otp.alert": "OTP, {Email} adresine gönderildi. Doğrulamak için aldığınız OTP'yi girin.",
+            "otp.resend.link": "OTP almadınız mı? Yeniden göndermek için buraya tıklayın",
+            "otp.resent.message": "OTP gönderildi. Almadıysanız tekrar tıklayın.",
+            "otp.resend.timer": "{X} saniye sonra yeni bir OTP gönderebilirsiniz.",
+            "otp.error.invalid": "Geçersiz OTP girildi. Lütfen tekrar deneyin. {X} deneme hakkınız kaldı.",
+            "changepw.title": "ŞİFREYİ SIFIRLA",
+            "changepw.newpassword.label": "Yeni şifre",
+            "changepw.confirmpassword.label": "Şifreyi onayla",
             "changepw.req.length": "{min}-{max} karakter",
-            "changepw.req.uppercase": "En az 1 bÃ¼yÃ¼k harf iÃ§ermelidir",
-            "changepw.req.number": "En az 1 rakam iÃ§ermelidir",
-            "changepw.req.symbol": "AÅŸaÄŸÄ±daki sembollerden en az biri bulunmalÄ±dÄ±r ( {symbols} )",
-            "changepw.req.consecutive": "{fields} iÃ§inden {n} karakterden fazla ardÄ±ÅŸÄ±k karakter iÃ§ermemelidir",
+            "changepw.req.uppercase": "En az 1 büyük harf içermelidir",
+            "changepw.req.number": "En az 1 rakam içermelidir",
+            "changepw.req.symbol": "Aşağıdaki sembollerden en az biri bulunmalıdır ( {symbols} )",
+            "changepw.req.consecutive": "{fields} içinden {n} karakterden fazla ardışık karakter içermemelidir",
             "changepw.field.firstname": "ad",
             "changepw.field.lastname": "soyad",
-            "changepw.field.username": "kullanÄ±cÄ± adÄ±",
+            "changepw.field.username": "kullanıcı adı",
             "changepw.field.email": "e-posta",
-            "changepw.strength.label": "Åžifre gÃ¼cÃ¼",
-            "changepw.strength.weak": "ZayÄ±f",
+            "changepw.strength.label": "Şifre gücü",
+            "changepw.strength.weak": "Zayıf",
             "changepw.strength.fair": "Orta",
             "changepw.strength.good": "Yeterli",
-            "changepw.strength.strong": "MÃ¼kemmel!",
-            "changepw.error.required": "Yeni ÅŸifre gereklidir.",
-            "changepw.error.requirements": "LÃ¼tfen tÃ¼m ÅŸifre gereksinimlerini karÅŸÄ±layÄ±n.",
-            "changepw.error.mismatch": "Åžifreler eÅŸleÅŸmiyor. LÃ¼tfen tekrar deneyin",
-            "changepw.expired.title": "Åžifre BaÄŸlantÄ±sÄ±nÄ±n SÃ¼resi Doldu",
-            "changepw.expired.message": "Åžifre sÄ±fÄ±rlama baÄŸlantÄ±nÄ±zÄ±n sÃ¼resi doldu. LÃ¼tfen ÅŸifrenizi sÄ±fÄ±rlamak iÃ§in geÃ§erli bir baÄŸlantÄ± kullanÄ±n.",
-            "psm.title": "Åžifreyi SÄ±fÄ±rla",
-            "psm.alert": "\"EMAIL\" bir hesapla iliÅŸkilendirilmiÅŸse kÄ±sa sÃ¼re iÃ§inde bir ÅŸifre sÄ±fÄ±rlama e-postasÄ± alacaksÄ±nÄ±z.",
-            "psm.error": "Bir ÅŸeyler ters gitti",
-            "goback.login": "GiriÅŸ SayfasÄ±na Geri DÃ¶n",
-            "changepw.success.title": "Åžifre BaÅŸarÄ±yla DeÄŸiÅŸtirildi",
-            "changepw.success.text": "Åžifreniz baÅŸarÄ±yla deÄŸiÅŸtirildi",
-            "login.error.invalid": "GeÃ§ersiz kullanÄ±cÄ± adÄ± veya ÅŸifre. {X} deneme hakkÄ±nÄ±z kaldÄ±."
+            "changepw.strength.strong": "Mükemmel!",
+            "changepw.error.required": "Yeni şifre gereklidir.",
+            "changepw.error.requirements": "Lütfen tüm şifre gereksinimlerini karşılayın.",
+            "changepw.error.mismatch": "Şifreler eşleşmiyor. Lütfen tekrar deneyin",
+            "changepw.expired.title": "Şifre Bağlantısının Süresi Doldu",
+            "changepw.expired.message": "Şifre sıfırlama bağlantınızın süresi doldu. Lütfen şifrenizi sıfırlamak için geçerli bir bağlantı kullanın.",
+            "psm.title": "Şifreyi Sıfırla",
+            "psm.alert": "\"EMAIL\" bir hesapla ilişkilendirilmişse kısa süre içinde bir şifre sıfırlama e-postası alacaksınız.",
+            "psm.error": "Bir şeyler ters gitti",
+            "goback.login": "Giriş Sayfasına Geri Dön",
+            "changepw.success.title": "Şifre Başarıyla Değiştirildi",
+            "changepw.success.text": "Şifreniz başarıyla değiştirildi",
+            "login.error.invalid": "Geçersiz kullanıcı adı veya şifre. {X} deneme hakkınız kaldı."
         },
         pl: {
-            "login.page.title": "ZALOGUJ SIÄ˜",
-            "login.page.button": "ZALOGUJ SIÄ˜",
+            "login.page.title": "ZALOGUJ SIĘ",
+            "login.page.button": "ZALOGUJ SIĘ",
             "email.field.placeholder": "e-mail",
             "email.field.label": "Adres e-mail",
-            "password.field.label": "HasÅ‚o",
-            "password.field.placeholder": "HasÅ‚o",
-            "forgot.password.link": "Nie pamiÄ™tam hasÅ‚a",
-            "reset.password": "ZRESETUJ HASÅO",
-            "reset.password.subtext": "WyÅ›lemy Ci e-mail z instrukcjami, jak je odzyskaÄ‡",
-            "forgot.page.helper": "Nie otrzymujesz e-maila umoÅ¼liwiajÄ…cego zresetowanie hasÅ‚a? Oznacza to, Å¼e podany adres e-mail nie jest nam znany. Nie moÅ¼esz sobie poradziÄ‡?",
-            "forgot.page.helper.link": "Skontaktuj siÄ™ z obsÅ‚ugÄ… klienta",
-            "login.register.helper": "Aby siÄ™ zarejestrowaÄ‡, uÅ¼yj karty Bouwmaat Pass. W razie problemÃ³w skontaktuj siÄ™ z {link}.",
-            "login.register.link": "obsÅ‚ugÄ… klienta",
-            "login.createacct.helper": "JeÅ›li nie masz konta online, utwÃ³rz swoje konto {link}.",
+            "password.field.label": "Hasło",
+            "password.field.placeholder": "Hasło",
+            "forgot.password.link": "Nie pamiętam hasła",
+            "reset.password": "ZRESETUJ HASŁO",
+            "reset.password.subtext": "Wyślemy Ci e-mail z instrukcjami, jak je odzyskać",
+            "forgot.page.helper": "Nie otrzymujesz e-maila umożliwiającego zresetowanie hasła? Oznacza to, że podany adres e-mail nie jest nam znany. Nie możesz sobie poradzić?",
+            "forgot.page.helper.link": "Skontaktuj się z obsługą klienta",
+            "login.register.helper": "Aby się zarejestrować, użyj karty Bouwmaat Pass. W razie problemów skontaktuj się z {link}.",
+            "login.register.link": "obsługą klienta",
+            "login.createacct.helper": "Jeśli nie masz konta online, utwórz swoje konto {link}.",
             "login.createacct.link": "tutaj",
             "next.button": "DALEJ",
-            "otp.page.title": "ZWERYFIKUJ SWOJÄ„ TOÅ»SAMOÅšÄ†",
-            "otp.field.label": "WprowadÅº kod OTP tutaj",
+            "otp.page.title": "ZWERYFIKUJ SWOJĄ TOŻSAMOŚĆ",
+            "otp.field.label": "Wprowadź kod OTP tutaj",
             "otp.field.placeholder": "Numer OTP",
             "otp.verify.button": "ZWERYFIKUJ",
             "otp.cancel.button": "ANULUJ",
-            "otp.alert": "Kod OTP zostaÅ‚ wysÅ‚any na adres {Email}. WprowadÅº otrzymany kod OTP, aby zweryfikowaÄ‡.",
-            "otp.resend.link": "Nie otrzymaÅ‚eÅ› kodu OTP? Kliknij tutaj, aby wysÅ‚aÄ‡ go ponownie",
-            "otp.resent.message": "Kod OTP zostaÅ‚ wysÅ‚any. Kliknij ponownie, jeÅ›li go nie otrzymaÅ‚eÅ›.",
-            "otp.resend.timer": "Nowy kod OTP bÄ™dzie moÅ¼na wysÅ‚aÄ‡ za {X} sekund.",
-            "otp.error.invalid": "Podano nieprawidÅ‚owy kod OTP. SprÃ³buj ponownie. PozostaÅ‚o Ci {X} prÃ³b(y).",
-            "changepw.title": "ZRESETUJ HASÅO",
-            "changepw.newpassword.label": "Nowe hasÅ‚o",
-            "changepw.confirmpassword.label": "PotwierdÅº hasÅ‚o",
-            "changepw.req.length": "{min}-{max} znakÃ³w",
-            "changepw.req.uppercase": "Musi zawieraÄ‡ co najmniej 1 wielkÄ… literÄ™",
-            "changepw.req.number": "Musi zawieraÄ‡ co najmniej 1 cyfrÄ™",
-            "changepw.req.symbol": "Musi zawieraÄ‡ co najmniej jeden z nastÄ™pujÄ…cych symboli ( {symbols} )",
-            "changepw.req.consecutive": "Nie zawiera wiÄ™cej niÅ¼ {n} kolejnych znakÃ³w z {fields}",
-            "changepw.field.firstname": "imiÄ™",
+            "otp.alert": "Kod OTP został wysłany na adres {Email}. Wprowadź otrzymany kod OTP, aby zweryfikować.",
+            "otp.resend.link": "Nie otrzymałeś kodu OTP? Kliknij tutaj, aby wysłać go ponownie",
+            "otp.resent.message": "Kod OTP został wysłany. Kliknij ponownie, jeśli go nie otrzymałeś.",
+            "otp.resend.timer": "Nowy kod OTP będzie można wysłać za {X} sekund.",
+            "otp.error.invalid": "Podano nieprawidłowy kod OTP. Spróbuj ponownie. Pozostało Ci {X} prób(y).",
+            "changepw.title": "ZRESETUJ HASŁO",
+            "changepw.newpassword.label": "Nowe hasło",
+            "changepw.confirmpassword.label": "Potwierdź hasło",
+            "changepw.req.length": "{min}-{max} znaków",
+            "changepw.req.uppercase": "Musi zawierać co najmniej 1 wielką literę",
+            "changepw.req.number": "Musi zawierać co najmniej 1 cyfrę",
+            "changepw.req.symbol": "Musi zawierać co najmniej jeden z następujących symboli ( {symbols} )",
+            "changepw.req.consecutive": "Nie zawiera więcej niż {n} kolejnych znaków z {fields}",
+            "changepw.field.firstname": "imię",
             "changepw.field.lastname": "nazwisko",
-            "changepw.field.username": "nazwa uÅ¼ytkownika",
+            "changepw.field.username": "nazwa użytkownika",
             "changepw.field.email": "e-mail",
-            "changepw.strength.label": "SiÅ‚a hasÅ‚a",
-            "changepw.strength.weak": "SÅ‚abe",
-            "changepw.strength.fair": "Åšrednie",
-            "changepw.strength.good": "WystarczajÄ…ce",
-            "changepw.strength.strong": "DoskonaÅ‚e!",
-            "changepw.error.required": "Nowe hasÅ‚o jest wymagane.",
-            "changepw.error.requirements": "SpeÅ‚nij wszystkie wymagania dotyczÄ…ce hasÅ‚a.",
-            "changepw.error.mismatch": "HasÅ‚a nie sÄ… zgodne. SprÃ³buj ponownie",
-            "changepw.expired.title": "Link do zmiany hasÅ‚a wygasÅ‚",
-            "changepw.expired.message": "TwÃ³j link do zresetowania hasÅ‚a wygasÅ‚. UÅ¼yj waÅ¼nego linku, aby zresetowaÄ‡ hasÅ‚o.",
-            "psm.title": "Zresetuj hasÅ‚o",
-            "psm.alert": "WkrÃ³tce otrzymasz e-mail z linkiem do zresetowania hasÅ‚a, jeÅ›li \"EMAIL\" jest powiÄ…zany z kontem.",
-            "psm.error": "CoÅ› poszÅ‚o nie tak",
-            "goback.login": "PowrÃ³t do strony logowania",
-            "changepw.success.title": "HasÅ‚o zostaÅ‚o pomyÅ›lnie zmienione",
-            "changepw.success.text": "Twoje hasÅ‚o zostaÅ‚o pomyÅ›lnie zmienione",
-            "login.error.invalid": "NieprawidÅ‚owa nazwa uÅ¼ytkownika lub hasÅ‚o. PozostaÅ‚o Ci {X} prÃ³b(y)."
+            "changepw.strength.label": "Siła hasła",
+            "changepw.strength.weak": "Słabe",
+            "changepw.strength.fair": "Średnie",
+            "changepw.strength.good": "Wystarczające",
+            "changepw.strength.strong": "Doskonałe!",
+            "changepw.error.required": "Nowe hasło jest wymagane.",
+            "changepw.error.requirements": "Spełnij wszystkie wymagania dotyczące hasła.",
+            "changepw.error.mismatch": "Hasła nie są zgodne. Spróbuj ponownie",
+            "changepw.expired.title": "Link do zmiany hasła wygasł",
+            "changepw.expired.message": "Twój link do zresetowania hasła wygasł. Użyj ważnego linku, aby zresetować hasło.",
+            "psm.title": "Zresetuj hasło",
+            "psm.alert": "Wkrótce otrzymasz e-mail z linkiem do zresetowania hasła, jeśli \"EMAIL\" jest powiązany z kontem.",
+            "psm.error": "Coś poszło nie tak",
+            "goback.login": "Powrót do strony logowania",
+            "changepw.success.title": "Hasło zostało pomyślnie zmienione",
+            "changepw.success.text": "Twoje hasło zostało pomyślnie zmienione",
+            "login.error.invalid": "Nieprawidłowa nazwa użytkownika lub hasło. Pozostało Ci {X} prób(y)."
         }
     };
 
@@ -1134,12 +1134,12 @@
     /* Backend login errors talk about the "username" where our UI shows an
        email field. Two normalizations, login pages only:
        1. Both-fields variants ("Invalid username/email or password.",
-          "Ongeldige gebruikersnaam/e-mailadres of wachtwoord.") â€” wording
+          "Ongeldige gebruikersnaam/e-mailadres of wachtwoord.") — wording
           varies per locale, so no string comparison: when the message contains
           '/', drop the WORD left of it (plus the slash) and keep the rest
           -> "Invalid email or password.".
        2. Single-word variants ("Invalid username or password." on
-          /moas/validatepassword) â€” swap the word itself for the email wording,
+          /moas/validatepassword) — swap the word itself for the email wording,
           preserving a leading capital. en + nl for now; add pairs for other
           locales when the backend copy is known. */
     function cleanLoginErrorMessage(msg) {
@@ -1150,7 +1150,7 @@
            EITHER source string, then pick the friendly copy by the ACTIVE locale:
            nl -> Dutch, en -> English. Any other locale falls through to the raw
            message (and any other message to the normal cleaning below). Returns
-           HTML â€” the three login handlers insert the result via innerHTML. */
+           HTML — the three login handlers insert the result via innerHTML. */
         var mmLocale = localStorage.getItem("mo_locale") || "nl";
         var mmMsg = msg.trim();
         var mmIsAuthAppError =
@@ -1228,16 +1228,16 @@
         );
     }
 
-    /* â”€â”€ SSO REGISTER-ERROR (param-driven, no form submission) â”€â”€
+    /* ── SSO REGISTER-ERROR (param-driven, no form submission) ──
        When the page URL carries is_exist=false (bookmarked SSO link, account
        not found), show the register-error message under the email field with
        the standard error treatment (red border + cross icon on the field).
        Runs on every tick on all three login endpoints; the param never leaves
        location.search, so every write is guarded. The message is NOT cleared
-       on input â€” it is request-driven guidance, not a wrong-input error.
+       on input — it is request-driven guidance, not a wrong-input error.
        The cross icon reuses id mo-userlogin-icon so handleLoginErrors() treats
        it as exempt and keeps the field's mo-input-error class. */
-    /* True only for is_exist=false â€” the bookmarked-SSO-link, account-not-found
+    /* True only for is_exist=false — the bookmarked-SSO-link, account-not-found
        case. Shared by the register error (shows it) and the create-account
        helper (hides itself: the two are mutually exclusive). */
     function isRegisterErrorRequest() {
@@ -1253,7 +1253,7 @@
         /* Message anchor is STEP-AWARE. Step 1: after the email field group
            (.mo-fg), OUTSIDE it. Step 2 (incl. userlogin?username=... which lands
            straight on the password step): the email .mo-fg is force-hidden and
-           the email lives in the read-only #mo-user-display box â€” anchor the
+           the email lives in the read-only #mo-user-display box — anchor the
            message right below THAT box instead. #mo-user-display is created by
            applyPasswordStep on a later tick, so re-evaluate the anchor on every
            tick and move the node only when it isn't already in place (the
@@ -1276,7 +1276,7 @@
         } else if (regErr.style.marginTop !== "") {
             regErr.style.removeProperty("margin-top");
         }
-        /* Locale re-sync every tick (late <html lang>) â€” compare before write. */
+        /* Locale re-sync every tick (late <html lang>) — compare before write. */
         var regHtml = registerHelperHtml();
         if (regErr.innerHTML !== regHtml) regErr.innerHTML = regHtml;
 
@@ -1284,7 +1284,7 @@
            #username input keeps its own, invisible there). Icon reuses id
            mo-email-server-icon so handleLoginErrors() leaves it alone. If the
            user's password input clears these (moLoginClear), the next tick
-           re-applies them â€” the register error persists for the whole visit. */
+           re-applies them — the register error persists for the whole visit. */
         if (regUserDisplay) {
             if (!regUserDisplay.classList.contains("border-danger")) {
                 regUserDisplay.classList.add("border", "border-danger");
@@ -1300,7 +1300,7 @@
             }
         }
 
-        /* Password field (when visible): same red treatment â€” border + cross
+        /* Password field (when visible): same red treatment — border + cross
            inside its .mo-pw-wrap (left of the eye toggle). The wrap is created by
            applyPasswordStep/applyEmailPasswordStep on a later tick, so this
            simply applies once the wrap exists. Icon reuses id mo-pw-server-icon
@@ -1330,13 +1330,13 @@
             emailInp.classList.add("mo-input-error");
         }
 
-        /* Cross icon inside the field â€” same .mo-input-wrap pattern as
+        /* Cross icon inside the field — same .mo-input-wrap pattern as
            handleLoginErrors(); all structural writes happen once (guarded by the
            icon's absence, so observer ticks are loop-safe). */
         var regWrap = emailInp.parentNode;
         if (!regWrap.querySelector(".mo-error-icon")) {
             if (regWrap.id === "userName") {
-                /* Two-step page: #userName is already the field's own container â€”
+                /* Two-step page: #userName is already the field's own container —
                    make it the positioning context instead of adding a wrapper. */
                 regWrap.style.position = "relative";
                 regWrap.style.display = "flex";
@@ -1360,12 +1360,12 @@
         }
     }
 
-    /* â”€â”€ CREATE-ACCOUNT HELPER (login pages, below the button) â”€â”€
+    /* ── CREATE-ACCOUNT HELPER (login pages, below the button) ──
        "If you do not have an Online Account, please create your account here."
        with "here" -> MO_URLS.createAccount. Shows ONLY when the server
-       rendered an error banner (errorOnPage() â€” e.g. wrong credentials /
+       rendered an error banner (errorOnPage() — e.g. wrong credentials /
        unknown user), and never when is_exist=false (there the register error
-       above replaces it â€” one message at a time). errorOnPage() stays true for
+       above replaces it — one message at a time). errorOnPage() stays true for
        the whole visit (the hidden banner keeps its text), so once shown the
        helper persists. Reuses the #mo-register-helper id so the existing
        neutral #mo-css styling applies. Insert-once + compare-before-write, so
@@ -1389,7 +1389,7 @@
             var helperRow = btn.closest(".row") || btn.parentNode;
             helperRow.parentNode.insertBefore(helper, helperRow.nextSibling);
         }
-        /* Locale re-sync every tick (late <html lang>) â€” compare before write. */
+        /* Locale re-sync every tick (late <html lang>) — compare before write. */
         var helperHtml = createAccountHelperHtml();
         if (helper.innerHTML !== helperHtml) helper.innerHTML = helperHtml;
     }
@@ -1398,7 +1398,7 @@
        The custom nodes are inserted once (guarded by id), but their text must be
        refreshed later: on a cold load the /openidsso 302 means our JS never ran
        to capture ?request_locale, so <html lang> is the only locale carrier and
-       miniOrange can set it AFTER our first ticks â€” labels first render in English
+       miniOrange can set it AFTER our first ticks — labels first render in English
        and must correct to the resolved locale once it settles. Compare before
        writing so a matched value doesn't retrigger the MutationObserver. */
     function syncLoginText() {
@@ -1415,14 +1415,14 @@
         setPh(document.getElementById("plaintextPassword"), tr("password.field.placeholder"));
     }
 
-    /* â”€â”€ STEP 1: Email page UI â”€â”€ */
+    /* ── STEP 1: Email page UI ── */
     function applyEmailStep() {
         var wrapper = document.getElementById("login-wrapper");
         if (!wrapper) return;
 
         syncLoginText();
 
-        /* LOG IN title â€” insert once before any form child */
+        /* LOG IN title — insert once before any form child */
         if (!document.getElementById("mo-title")) {
             var t = document.createElement("span");
             t.id = "mo-title"; t.className = "px-2 mx-1"; t.textContent = tr("login.page.title");
@@ -1493,7 +1493,7 @@
         });
     }
 
-    /* â”€â”€ STEP 2: Password page UI â”€â”€ */
+    /* ── STEP 2: Password page UI ── */
     function applyPasswordStep() {
         var pwField = document.getElementById("plaintextPassword");
         if (!pwField) return;                          // not the password step yet
@@ -1514,7 +1514,7 @@
             if (emailFg) emailFg.style.setProperty("display", "none", "important");
         }
 
-        /* LOG IN title â€” insert once before any form child */
+        /* LOG IN title — insert once before any form child */
         var wrapper = document.getElementById("login-wrapper");
         if (wrapper && !document.getElementById("mo-title")) {
             var t = document.createElement("span");
@@ -1613,7 +1613,7 @@
         }
 
         /* Clear all login error indicators once the user edits the password
-           (message, red borders, and both cross icons) â€” like the reset page. */
+           (message, red borders, and both cross icons) — like the reset page. */
         if (!pwField.dataset.moLoginClear) {
             pwField.dataset.moLoginClear = "true";
             pwField.addEventListener("input", function () {
@@ -1634,15 +1634,15 @@
         }
     }
 
-    /* â”€â”€ Force-hide specific elements that jQuery's showAdminPassword() re-shows â”€â”€ */
+    /* ── Force-hide specific elements that jQuery's showAdminPassword() re-shows ── */
     function forceHide() {
-        /* Hide by ID â€” only the element itself, never its parent */
+        /* Hide by ID — only the element itself, never its parent */
         ["dynamicUserName", "goBack"].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.style.setProperty("display", "none", "important");
         });
 
-        /* Hide "Sign in with another account" links only â€” check the link's OWN text, not children */
+        /* Hide "Sign in with another account" links only — check the link's OWN text, not children */
         document.querySelectorAll("a").forEach(function (a) {
             var txt = "";
             a.childNodes.forEach(function (n) { if (n.nodeType === 3) txt += n.nodeValue; });
@@ -1660,7 +1660,7 @@
 
 
 
-    /* â”€â”€ LOGIN ERROR HANDLER â”€â”€ */
+    /* ── LOGIN ERROR HANDLER ── */
     function handleLoginErrors() {
         var feedbackEl = document.getElementById("feedback-msg");
         var userErrorEl = document.getElementById("username-error");
@@ -1754,15 +1754,15 @@
         }
     }
 
-    /* â”€â”€ COMBINED EMAIL + PASSWORD STEP (redirecttoidplogin) â”€â”€ */
+    /* ── COMBINED EMAIL + PASSWORD STEP (redirecttoidplogin) ── */
     /* On this page both the email and password fields are visible at once,
-       so we style both together â€” no two-step toggle and no read-only
+       so we style both together — no two-step toggle and no read-only
        username box (the email field stays editable). */
     function applyEmailPasswordStep() {
         var wrapper = document.getElementById("login-wrapper");
         if (!wrapper) return;
 
-        /* LOG IN title â€” insert once before any form child */
+        /* LOG IN title — insert once before any form child */
         if (!document.getElementById("mo-title")) {
             var t = document.createElement("span");
             t.id = "mo-title"; t.className = "px-2 mx-1"; t.textContent = tr("login.page.title");
@@ -1844,8 +1844,8 @@
         wrapper.querySelectorAll("hr,br").forEach(function (el) { el.style.display = "none"; });
     }
 
-    /* â”€â”€ Redirect to IDP login PAGE (/moas/redirecttoidplogin) â”€â”€ */
-    /* Same styling/behaviour as the /moas/login page â€” reuses the shared
+    /* ── Redirect to IDP login PAGE (/moas/redirecttoidplogin) ── */
+    /* Same styling/behaviour as the /moas/login page — reuses the shared
        CSS injection. Uses the combined step (both fields shown at once). */
     function applyRedirectToIdpLogin() {
         console.log('in apply redirecto idplogin')
@@ -1859,7 +1859,7 @@
         forceHide();
 
         /* Server-rendered error banner -> show below the password field.
-           Guarded by #mo-redirect-error so it runs ONCE â€” otherwise the DOM
+           Guarded by #mo-redirect-error so it runs ONCE — otherwise the DOM
            mutations below keep re-triggering the observer (infinite loop). */
         var isPageHasError = errorOnPage();
         /* Also gate on a "dismissed" flag: the server banner (#error-alert-message)
@@ -1937,7 +1937,7 @@
             $('#error-alert-message').hide();
         }
 
-        /* Hide original forgot/create link wrappers â€” skip our custom #mo-forgot */
+        /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
         document.querySelectorAll("a[href*='forgotpassword'],a[href*='resetpassword'],a[href*='businessfreetrial']").forEach(function (a) {
             if (a.id === "mo-forgot") return;
             var c = a.closest(".col-auto");
@@ -1951,7 +1951,7 @@
         $('body').addClass('h-100 align-items-center');
     }
 
-    /* â”€â”€ FORGOT PASSWORD PAGE (/moas/idp/forgotpassword) â”€â”€ */
+    /* ── FORGOT PASSWORD PAGE (/moas/idp/forgotpassword) ── */
     function applyForgotPage() {
         if (!checkIsForgot()) return;
 
@@ -1976,7 +1976,7 @@
 
         /* resetuserpassword endpoint only: strip all <br> spacers (runs every
            tick, like the resetpassword equivalent above) and set card padding
-           28px 28px â€” same inline !important + guard pattern as above. */
+           28px 28px — same inline !important + guard pattern as above. */
         if (window.location.pathname.toLowerCase().indexOf("moas/idp/resetuserpassword") !== -1) {
             $('br').remove();
 
@@ -1986,7 +1986,7 @@
             }
         }
 
-        /* â”€â”€ CSS injection (once) â”€â”€ */
+        /* ── CSS injection (once) ── */
         if (!document.getElementById("mo-fp-css")) {
             var fpCss =
                 /* Page background */
@@ -2125,7 +2125,7 @@
             document.head.appendChild(fpSt);
         }
 
-        /* â”€â”€ JS force-hide (runs every call â€” beats React re-renders & inline styles) â”€â”€ */
+        /* ── JS force-hide (runs every call — beats React re-renders & inline styles) ── */
         /* Logo row */
         document.querySelectorAll("div.w-100.d-flex").forEach(function (el) {
             if (el.classList.contains("justify-content-between") && el.classList.contains("align-items-start")) {
@@ -2149,12 +2149,12 @@
             el.style.setProperty("display", "none", "important");
         });
 
-        /* â”€â”€ DOM injection â€” only once â”€â”€ */
+        /* ── DOM injection — only once ── */
         /* Find the form element */
         var fpForm = emailInput.closest("form");
         if (!fpForm) return;
 
-        /* Change button text to NEXT â†’ . Runs on EVERY pass (before the
+        /* Change button text to NEXT → . Runs on EVERY pass (before the
            mo-forgot-done guard below): the backend renders the button with its
            own label ("Wachtwoord resetten") which can appear or be re-rendered
            after our first pass. setBtnArrowLabel is idempotent, so this is
@@ -2229,7 +2229,7 @@
            trap the label. Guarded so it doesn't stack; cleared once the user edits.
     
            Exception: on the /moas/idp/resetpassword and /moas/idp/resetuserpassword
-           endpoints (enter your email to get the reset link â€” the server has no
+           endpoints (enter your email to get the reset link — the server has no
            meaningful error to show here), suppress ALL error UI (message, red
            border, cross icon). The forgotpassword endpoint keeps it. */
         var fpPath = window.location.pathname.toLowerCase();
@@ -2283,11 +2283,11 @@
         $('#go-back-link').parent().hide();
     }
 
-    /* â”€â”€ OTP VERIFY PAGE (/moas/idp/validatenextfactor) â”€â”€ */
+    /* ── OTP VERIFY PAGE (/moas/idp/validatenextfactor) ── */
     function applyOtpPage() {
         if (!checkIsOtp()) return;
 
-        /* CSS â€” inject once */
+        /* CSS — inject once */
         if (!document.getElementById("mo-otp-css")) {
             var otpCss =
                 /* Page: remove grey overlay, set brand bg */
@@ -2363,7 +2363,7 @@
                 "#modal-header-main{padding:0 0 12px!important;}" +
                 "#modal-body{padding:4px 0!important;}" +
                 ".modal .container-fluid,#container{padding:0!important;}" +
-                /* Bootstrap gives .modal-footer children a margin â€” kill it; the
+                /* Bootstrap gives .modal-footer children a margin — kill it; the
                    footer's gap:12px handles the spacing between the buttons */
                 "#modal-footer #validate,#modal-footer .btn-cancel{margin:0!important;}" +
                 "}";
@@ -2375,11 +2375,11 @@
 
         /* Idempotent UI bits below run on EVERY call (incl. observer ticks after
            the AJAX "resend OTP", which re-renders the OTP subtree without a page
-           reload) â€” each block is guarded so it neither duplicates nor stacks. */
+           reload) — each block is guarded so it neither duplicates nor stacks. */
         var otpInput = document.getElementById("otpToken");
         if (!otpInput) return;
 
-        /* VERIFY YOUR IDENTITY title â€” re-sync on every tick (don't freeze). The
+        /* VERIFY YOUR IDENTITY title — re-sync on every tick (don't freeze). The
            first tick can run before mo_locale settles (script imported early in the
            JSP), so tr() may return English; a later tick must be able to correct it.
            Compare before writing so a matched value doesn't retrigger the observer. */
@@ -2395,7 +2395,7 @@
             if (otpTitle.textContent !== otpTitleTxt) otpTitle.textContent = otpTitleTxt;
         }
 
-        /* Label above OTP input â€” reuse a server-rendered label[for=otpToken]
+        /* Label above OTP input — reuse a server-rendered label[for=otpToken]
            if present, otherwise create one right before the input. Works whether
            or not the page ships its own label. */
         var otpLbl = document.getElementById("mo-otp-lbl") || otpInput.parentNode.querySelector('label[for="otpToken"]');
@@ -2463,7 +2463,7 @@
         }
 
         /* Backend typo fix in the OTP success message: "...to Validate." -> "...to validate."
-           English only â€” detected via the "Please enter the OTP" phrase. Idempotent:
+           English only — detected via the "Please enter the OTP" phrase. Idempotent:
            only rewrites when the capitalised "Validate" is still present. */
         var otpSuccessSpan = document.querySelector("#success-alert-message .actionMessage li span");
         if (otpSuccessSpan) {
@@ -2474,15 +2474,15 @@
         }
 
         /* Resend-link dynamic texts. The page's own resendOtpSubmit() (JSP)
-           writes hardcoded ENGLISH strings into #resendIdpOtpLink â€” the "OTP
-           Sentâ€¦" confirmation and the once-per-second countdown â€” so match those
+           writes hardcoded ENGLISH strings into #resendIdpOtpLink — the "OTP
+           Sent…" confirmation and the once-per-second countdown — so match those
            fixed English fragments here on every tick and rewrite them in the
            active locale. The countdown number is captured and re-inserted into
            {X} so it keeps ticking. Loop-safe: after our rewrite the text either
            no longer matches the English pattern, or (en locale) equals the
            target exactly, so observer ticks never rewrite twice.
            Also matches the server-rendered Dutch variant of the sent-message
-           ("â€¦als u het niet hebt ontvangen") so it uses our informal copy. */
+           ("…als u het niet hebt ontvangen") so it uses our informal copy. */
         var resendA = document.getElementById("resendIdpOtpLink");
         if (resendA) {
             var resendTxt = resendA.textContent.trim();
@@ -2499,13 +2499,13 @@
             }
         }
 
-        /* OTP-sent alert text (nl) â€” the email address in the middle of the
+        /* OTP-sent alert text (nl) — the email address in the middle of the
            server string varies per user, so match on the fixed tail instead of
            the whole string, then re-insert the parsed email into our copy. */
         var otpAlertSpanTxt = $("#success-alert-message .actionMessage li span").text().trim();
         if (otpAlertSpanTxt.indexOf("Voer de OTP in die u hebt ontvangen om te valideren.") !== -1) {
             /* Asterisk-tolerant: the backend masks the email (am****ar@gm***.com).
-               Trailing dots stripped â€” the domain part grabs the sentence period. */
+               Trailing dots stripped — the domain part grabs the sentence period. */
             var otpAlertEmailMatch = otpAlertSpanTxt.match(/[\w.*+-]+@[\w.*-]+\.[\w.*-]+/);
             var otpAlertEmail = otpAlertEmailMatch ? otpAlertEmailMatch[0].replace(/\.+$/, "") : "";
             $("#success-alert-message .actionMessage li span").text(
@@ -2513,7 +2513,7 @@
             );
         }
 
-        /* â”€â”€ One-time-only below (server error handling + done marker) â”€â”€ */
+        /* ── One-time-only below (server error handling + done marker) ── */
         if (document.getElementById("mo-otp-done")) return;
 
         /* Mark done */
@@ -2559,7 +2559,7 @@
 
     }
 
-    /* â”€â”€ CHANGE PASSWORD PAGE (/moas/idp/changepassword) â”€â”€ */
+    /* ── CHANGE PASSWORD PAGE (/moas/idp/changepassword) ── */
     function applyChangePasswordPage() {
         if (!checkIsChangePass()) return;
         $('.col-xs-8.col-xs-offset-2').addClass('text-start');
@@ -2585,7 +2585,7 @@
                 cupForm.style.setProperty("padding", "0", "important");
             }
         }
-        /* CSS â€” inject once */
+        /* CSS — inject once */
         if (!document.getElementById("mo-cp-css")) {
             var cpCss =
                 /* Page bg */
@@ -2666,7 +2666,7 @@
 
                 /* Mobile: white page background, card pinned to top, flush edges.
                    #login-body is a ROW flex container (d-flex justify-content-center
-                   align-items-center), so vertical centering is align-items here â€”
+                   align-items-center), so vertical centering is align-items here —
                    body #login-body out-specifies the Bootstrap utility classes. */
                 "@media(max-width:576px){" +
                 "body,#login-body{background:#ffffff!important;}" +
@@ -2707,7 +2707,7 @@
 
             /* The backend can render this success screen in ENGLISH even when the
                resolved locale is not English (its server-side locale differs from our
-               mo_locale â€” e.g. English copy with mo_locale=nl). The nl block above
+               mo_locale — e.g. English copy with mo_locale=nl). The nl block above
                only matches the Dutch source strings, so also translate from the
                English source here, into the ACTIVE locale via tr(). Trailing period
                tolerated; guarded compare-before-write so it's idempotent, and the
@@ -2914,7 +2914,7 @@
             errorText.style.fontSize = "12px";
             errorText.style.fontWeight = "500";
             /* The confirm-field wrap keeps its shared 16px bottom margin (so the
-               fieldâ†”NEXT-button gap holds when there's no error). When the error
+               field↔NEXT-button gap holds when there's no error). When the error
                shows, this -10px top margin tucks it up to sit ~6px under the field
                (16 + -10), and the 16px bottom margin restores the gap to the NEXT
                button below the error. Works in both flex and block parents (the
@@ -2923,7 +2923,7 @@
             errorText.style.marginBottom = "16px";
             errorText.style.display = "none";
 
-            // Helper text â€” rendered as a bulleted requirements list
+            // Helper text — rendered as a bulleted requirements list
             var helper = document.createElement("ul");
             helper.id = "mo-cp-helper-text";
             helper.style.fontFamily = "'Figtree', sans-serif";
@@ -2989,7 +2989,7 @@
 
             /* Password strength meter (below the policy list).
                Layout: header row with the static label left and the tier word
-               ("Poor"/"Fair"/â€¦) right, full-width bar underneath. */
+               ("Poor"/"Fair"/…) right, full-width bar underneath. */
             var strengthBox = document.createElement("div");
             strengthBox.id = "mo-cp-strength";
             strengthBox.style.margin = "4px 0 16px";
@@ -3099,18 +3099,18 @@
                 if (!(key in checks)) state = "dot";      /* name/email -> plain dot */
                 else if (!val) state = "empty";           /* empty field -> no marker */
                 else state = checks[key] ? "ok" : "bad";
-                /* Only touch the DOM when the state actually changes â€” otherwise the
+                /* Only touch the DOM when the state actually changes — otherwise the
                    textContent/style writes retrigger the observer and loop. */
                 if (marker.dataset.state === state) return;
                 marker.dataset.state = state;
-                if (state === "dot") { marker.textContent = "â€¢"; marker.style.color = "#506C7C"; li.style.color = ""; }
+                if (state === "dot") { marker.textContent = "•"; marker.style.color = "#506C7C"; li.style.color = ""; }
                 else if (state === "empty") { marker.textContent = ""; marker.style.color = ""; li.style.color = ""; }
-                else if (state === "ok") { marker.textContent = "âœ”"; marker.style.color = "#1b8f3a"; li.style.color = "#1b8f3a"; }  /* satisfied -> green text */
-                else { marker.textContent = "â—‹"; marker.style.color = "#506C7C"; li.style.color = ""; }  /* not satisfied -> hollow dot */
+                else if (state === "ok") { marker.textContent = "✔"; marker.style.color = "#1b8f3a"; li.style.color = "#1b8f3a"; }  /* satisfied -> green text */
+                else { marker.textContent = "○"; marker.style.color = "#506C7C"; li.style.color = ""; }  /* not satisfied -> hollow dot */
             });
         }
 
-        /* Password strength score (0-100) â€” graduated by composition, not just
+        /* Password strength score (0-100) — graduated by composition, not just
            "all rules met": rewards length tiers, mixed case, multiple digits and
            multiple special characters. */
         function calcStrength(v) {
@@ -3175,7 +3175,7 @@
             confirmPasswordInput.addEventListener("input", clearCpError);
         }
 
-        /* Update button text to NEXT â†’ */
+        /* Update button text to NEXT → */
         var saveBtn = document.getElementById("validate") || document.getElementById("submit");
         setBtnArrowLabel(saveBtn, tr("next.button"));
 
@@ -3275,7 +3275,7 @@
                 }
 
                 /* Re-evaluate the VISIBLE requirement list and block only if a shown,
-                   client-checkable rule is unmet â€” keeps the gate in sync with the
+                   client-checkable rule is unmet — keeps the gate in sync with the
                    green/red ticks the user actually sees (PII rules show a dot and are
                    validated server-side, so they never block here). */
                 updateMoReqList(val);
@@ -3299,7 +3299,7 @@
             });
         }
 
-        /* â”€â”€ PASSWORD MATCH CHECK (blur on confirm) â”€â”€ */
+        /* ── PASSWORD MATCH CHECK (blur on confirm) ── */
         /* Reuses the single showCpError/clearCpError message element
            (#mo-cp-error-text) so the mismatch message can never be shown twice
            (the submit handler uses the same element). The per-field input
@@ -3367,12 +3367,12 @@
 
     }
 
-    /* â”€â”€ MAIN RUN â”€â”€ */
+    /* ── MAIN RUN ── */
     function run() {
         if (checkIsLogout()) { applyLogoutPage(); return; }
 
         /* getLocale() below already captures ?request_locale from the URL on the
-           openidsso page too, and that page renders the normal login form â€” so we
+           openidsso page too, and that page renders the normal login form — so we
            let it fall through to the login styling instead of short-circuiting. */
         getLocale();
 
@@ -3392,7 +3392,7 @@
         injectFontAndCss();
 
         /* The redirecttoidplogin page also matches checkIsLogin() (it has
-           #idploginform), so exclude it here â€” it has its own handler below.
+           #idploginform), so exclude it here — it has its own handler below.
            Otherwise both flows run and each appends its own error message. */
         if (isLogin && !isRedirectToIdpLogin) {
             applyEmailStep();
@@ -3402,7 +3402,7 @@
             applyCreateAccountHelper();
             forceHide();
 
-            /* Hide original forgot/create link wrappers â€” skip our custom #mo-forgot */
+            /* Hide original forgot/create link wrappers — skip our custom #mo-forgot */
             document.querySelectorAll("a[href*='forgotpassword'],a[href*='resetpassword'],a[href*='businessfreetrial']").forEach(function (a) {
                 if (a.id === "mo-forgot") return;
                 var c = a.closest(".col-auto");
@@ -3422,7 +3422,7 @@
         if (isPasswordSentMessage) { applyPasswordSentMessage(); }
     }
 
-    /* â”€â”€ TIMING â”€â”€ */
+    /* ── TIMING ── */
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", run);
     } else { run(); }
@@ -3430,7 +3430,7 @@
     setTimeout(run, 800);
     setTimeout(run, 1500);
 
-    /* â”€â”€ OBSERVER â”€â”€ */
+    /* ── OBSERVER ── */
     var observer = new MutationObserver(function () {
         var isLogin = checkIsLogin();
         var isRedirectToIdpLogin = checkIsRedirectToIdpLogin();
@@ -3455,7 +3455,7 @@
 
     /* miniOrange can set <html lang> AFTER our timed ticks on a cold load. Since
        the /openidsso 302 stops our JS from ever seeing ?request_locale, that
-       attribute is the only locale carrier here â€” re-resolve and re-render the
+       attribute is the only locale carrier here — re-resolve and re-render the
        moment it appears/changes so a late "it" corrects the English first paint.
        Watches documentElement (not body), which the observer above never sees. */
     var htmlLangObserver = new MutationObserver(function () { run(); });
@@ -3466,10 +3466,10 @@
 
 }());
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   GOOGLE TAG MANAGER â€” loads on EVERY IdP page (no endpoint guard).
+/* ══════════════════════════════════════════════════════════════════
+   GOOGLE TAG MANAGER — loads on EVERY IdP page (no endpoint guard).
    Container id is per-client: change it when adapting for a new tenant.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ══════════════════════════════════════════════════════════════════ */
 
 /* GTM CONTAINER LOADER */
 (function (w, d, s, l, i) {
@@ -3520,7 +3520,7 @@
 
     /* Only one page's mo- error node exists at a time, so a flat lookup is
        safe: login steps, combined login, OTP (reuses mo-userlogin-error),
-       forgot/reset, change password â€” then the server banner as fallback. */
+       forgot/reset, change password — then the server banner as fallback. */
     var ERROR_IDS = ['mo-pw-error', 'mo-userlogin-error', 'mo-redirect-error', 'mo-fp-error', 'mo-cp-error-text'];
 
     function getErrorMessage() {
@@ -3543,8 +3543,8 @@
     }
 
     /* OTP page: parse the masked recipient email (am****ar@gm***.com) out of
-       the "OTP sent" success alert. Asterisk-tolerant â€” same pattern as the
-       password-sent handler in the main IIFE â€” and locale-independent (only
+       the "OTP sent" success alert. Asterisk-tolerant — same pattern as the
+       password-sent handler in the main IIFE — and locale-independent (only
        the email token is parsed, never the surrounding sentence). Works both
        before and after the main IIFE's nl alert rewrite, which re-inserts the
        parsed email. */
@@ -3557,40 +3557,40 @@
 
     /* Lowercased substrings that mark a locked/blocked/denied account. Derived
        from the auth-server's own message*.properties, covering the whole lock
-       family â€” "not authorized/permitted/allowed to login" (error.authorization,
+       family — "not authorized/permitted/allowed to login" (error.authorization,
        msg.user.{first,second}.factor.denied, error.rba.deny), "account has been
        locked/blocked/disabled" (error.user.disabled,
        error.enduser.disabled.with.failed.attempts, error.customer.account.blocked),
        and "not allowed to login with this IP" (error.blocked.ip). Backend serves
-       error banners in 10 locales â€” ar, de, en, es, fr, it, nl, pl, pt, tr â€”
+       error banners in 10 locales — ar, de, en, es, fr, it, nl, pl, pt, tr —
        matching customjs's own TRANSLATIONS set.
        The backend often phrases lockout as an authorization refusal, not the word
        "locked", so both phrasings are matched. Every substring has been checked
        against each locale's invalid-credentials and OTP-failure strings
-       (error.enduser.invalid, error.login*, error.validate.fail) â€” none collide,
+       (error.enduser.invalid, error.login*, error.validate.fail) — none collide,
        so a wrong-password or bad-OTP message never reads as account_locked. Add
        new confirmed strings here as backend copy changes. */
     var LOCK_PATTERNS = [
     /* en */ 'not authorized to log', 'not permitted to login', 'not allowed to log', 'locked', 'blocked',
     /* nl */ 'niet bevoegd om in te loggen', 'mag niet inloggen', 'niet toegestaan om in te loggen', 'geblokkeerd',
     /* de */ 'nicht berechtigt', 'nicht erlaubt', 'gesperrt', 'blockiert',
-    /* fr */ 'autorisÃ©', 'verrouillÃ©', 'bloquÃ©',
+    /* fr */ 'autorisé', 'verrouillé', 'bloqué',
     /* it */ 'autorizzato', 'consentito', 'bloccato',
     /* es + pt */ 'autorizado', 'bloqueada', 'bloqueado', 'desactivada',
-    /* pl */ 'upowaÅ¼niony do logowania', 'nie wolno siÄ™ logowaÄ‡', 'zablokowan',
+    /* pl */ 'upoważniony do logowania', 'nie wolno się logować', 'zablokowan',
     /* tr */ 'yetkiniz yok', 'izin verilmiyor', 'kilitlendi', 'engellendi',
-    /* ar */ 'ØºÙŠØ± Ù…ØµØ±Ø­', 'ØºÙŠØ± Ù…Ø³Ù…ÙˆØ­', 'Ù‚ÙÙ„', 'Ø­Ø¸Ø±'
+    /* ar */ 'غير مصرح', 'غير مسموح', 'قفل', 'حظر'
     ];
 
     /* Lowercased substrings for the OTP transaction-limit error
        (error.transaction.limit.exceeded, "The transaction limit has been
-       exceeded."). Distinct from a wrong OTP â€” the user hit the OTP send/verify
-       quota â€” so it maps to its own error_type instead of incorrect_otp. Backend
+       exceeded."). Distinct from a wrong OTP — the user hit the OTP send/verify
+       quota — so it maps to its own error_type instead of incorrect_otp. Backend
        defines it in 8 locales; es/pt inherit the en string via resource-bundle
        fallback, so 'transaction limit' covers them. No substring collides with
-       the credential/OTP/lock strings (none mention transactions). tr note: "Ä°"
-       lowercases to "iÌ‡" (i + combining dot) in JS, so we match 'limiti aÅŸÄ±ldÄ±'
-       rather than the leading "Ä°ÅŸlem". */
+       the credential/OTP/lock strings (none mention transactions). tr note: "İ"
+       lowercases to "i̇" (i + combining dot) in JS, so we match 'limiti aşıldı'
+       rather than the leading "İşlem". */
     var TXN_LIMIT_PATTERNS = [
     /* en (+es/pt fallback) */ 'transaction limit',
     /* de */ 'transaktionslimit',
@@ -3598,16 +3598,16 @@
     /* it */ 'limite di transazione',
     /* nl */ 'transactielimiet',
     /* pl */ 'limit transakcji',
-    /* tr */ 'limiti aÅŸÄ±ldÄ±',
-    /* ar */ 'Ø­Ø¯ Ø§Ù„Ù…Ø¹Ø§Ù…Ù„Ø©'
+    /* tr */ 'limiti aşıldı',
+    /* ar */ 'حد المعاملة'
     ];
 
     /* Classify an error into a typed error_type. Primary signal is the PAGE,
-       not the message text â€” locale-independent and robust: an error on the OTP
+       not the message text — locale-independent and robust: an error on the OTP
        page is an OTP error no matter how the backend phrased it in 10 languages
-       (so "Validatie misluktâ€¦" needs no Dutch parsing). The one state page
-       context can't see is a locked-out account â€” it surfaces a distinct banner
-       on the login/OTP page â€” so that ONE case is detected by matching known
+       (so "Validatie mislukt…" needs no Dutch parsing). The one state page
+       context can't see is a locked-out account — it surfaces a distinct banner
+       on the login/OTP page — so that ONE case is detected by matching known
        lock wording, which overrides the page default. Login folds
        wrong-password and unknown-user into invalid_credentials because the
        backend returns one generic message for both (by design). */
