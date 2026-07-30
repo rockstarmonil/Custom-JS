@@ -15,7 +15,7 @@
         createAccount: "https://dev.account.bouwmaat.nl/inloggen",
         customerService: "https://bouwmaat.nl/pages/klantenservice",
         /* "Not authorized to login" (account-locked) message -> one-time login code */
-        oneTimeLoginCode: "https://account.bouwmaat.nl/inloggen",
+        oneTimeLoginCode: "https://dev.account.bouwmaat.nl/inloggen",
         /* Figtree webfont stylesheet */
         fontStylesheet: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap"
     };
@@ -1179,6 +1179,32 @@
         if (mmIsNotAuthorizedError && mmLocale === "en") {
             return 'Too many login attempts. Please try again in 5 minutes or request a ' +
                 '<a href="' + MO_URLS.oneTimeLoginCode + '" style="color:inherit;text-decoration:underline;font-weight:600;">one-time login code</a>.';
+        }
+
+        /* Wrong-password attempts-remaining message on /moas/validatepassword,
+           NL only (other locales keep the generic username/gebruikersnaam swap
+           below until their backend copy is confirmed, same pattern as the two
+           blocks above). Backend renders "Ongeldige gebruikersnaam of wachtwoord.
+           U heeft nog {X} meer poging(en) over." â€” detect by prefix (wording
+           after "nog" carries the live attempt count, so no exact-match compare),
+           pull out the number, and substitute it into the friendlier copy. */
+        if (mmLocale === "nl" && mmMsg.indexOf("Ongeldige gebruikersnaam of wachtwoord. U heeft nog") === 0) {
+            var mmAttemptsLeft = mmMsg.match(/\d+/);
+            if (mmAttemptsLeft) {
+                return tr("login.error.invalid").replace("{X}", mmAttemptsLeft[0]);
+            }
+        }
+
+        /* /moas/idp/userlogin: the backend sometimes fails to localize the
+           both-fields invalid-credentials message and renders it in English
+           regardless of mo_locale ("Invalid username/email or password.").
+           When the active locale is nl, translate that specific English
+           string directly instead of letting it fall through to the generic
+           "/" split below (which would only strip "username" and leave the
+           rest in English). Prefix match, not exact-equality, in case the
+           backend appends trailing punctuation/whitespace differences. */
+        if (mmLocale === "nl" && mmMsg.indexOf("Invalid username/email or password") === 0) {
+            return "Ongeldig e-mailadres of wachtwoord.";
         }
 
         if (msg.indexOf("/") !== -1) {
